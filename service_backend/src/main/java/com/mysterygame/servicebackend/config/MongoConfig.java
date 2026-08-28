@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 public class MongoConfig extends AbstractMongoClientConfiguration {
 
-    @Value("${spring.data.mongodb.uri:mongodb+srv://crimeSolver_admin:crimeSolver%402026@cluster0.hn72ik2.mongodb.net/crime_solver_db?retryWrites=true&w=majority&appName=Cluster0}")
+    @Value("${spring.data.mongodb.uri:${MONGODB_URI:}}")
     private String mongoUri;
 
     @Value("${spring.data.mongodb.database:crime_solver_db}")
@@ -28,14 +28,18 @@ public class MongoConfig extends AbstractMongoClientConfiguration {
     @Override
     @Bean
     public MongoClient mongoClient() {
+        if (mongoUri == null || mongoUri.trim().isEmpty()) {
+            throw new IllegalStateException("MongoDB URI is not configured! Please check your .env file or MONGODB_URI environment variable.");
+        }
+
         ConnectionString connectionString = new ConnectionString(mongoUri);
-        MongoClientSettings mongoClientSettings = MongoClientSettings.builder()
+        MongoClientSettings mongoSettings = MongoClientSettings.builder()
                 .applyConnectionString(connectionString)
                 .applyToSocketSettings(builder -> 
                         builder.connectTimeout(15, TimeUnit.SECONDS)
                                .readTimeout(15, TimeUnit.SECONDS))
                 .build();
 
-        return MongoClients.create(mongoClientSettings);
+        return MongoClients.create(mongoSettings);
     }
 }

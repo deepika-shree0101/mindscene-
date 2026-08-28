@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import type { CaseData } from '../types';
 import { sound } from '../utils/soundEngine';
 import { Shield, Clock, MapPin, Award, LogOut, Volume2, VolumeX, FolderLock, Sparkles, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { FullscreenButton } from './FullscreenButton';
 
 interface CaseDashboardProps {
   cases: CaseData[];
@@ -68,6 +69,8 @@ export const CaseDashboard: React.FC<CaseDashboardProps> = ({ cases, onSelectCas
           </div>
 
           <div className="flex items-center gap-2">
+            <FullscreenButton showLabel={false} />
+
             <button
               onClick={handleAudioToggle}
               title={isMuted ? 'Unmute Audio' : 'Mute Audio'}

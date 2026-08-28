@@ -1,10 +1,11 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { CaseData, CrimeScene, Clue, Hotspot } from '../types';
 import { sound } from '../utils/soundEngine';
 import { ClueInspectModal } from './ClueInspectModal';
 import { EvidenceInventory } from './EvidenceInventory';
 import { AiPartnerHUD } from './AiPartnerHUD';
 import { DeductionModal } from './DeductionModal';
+import { FullscreenButton } from './FullscreenButton';
 import { 
   Flashlight, Folder, BrainCircuit, ArrowLeft, 
   Search, Key, FileText, FlaskConical, Camera, 
@@ -189,6 +190,9 @@ export const CrimeSceneExplorer: React.FC<CrimeSceneExplorerProps> = ({
 
         {/* Right: Controls & Actions */}
         <div className="flex items-center gap-2">
+          {/* Fullscreen Immersion Toggle */}
+          <FullscreenButton showLabel={false} />
+
           {/* Ambient Lighting Toggle Switch */}
           <button
             onClick={() => {

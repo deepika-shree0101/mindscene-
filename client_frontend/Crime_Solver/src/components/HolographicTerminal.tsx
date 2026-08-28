@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { sound } from '../utils/soundEngine';
 import { Shield, Lock, User, Terminal, CheckCircle, AlertTriangle, Fingerprint, Award } from 'lucide-react';
+import { FullscreenButton } from './FullscreenButton';
 
 export const HolographicTerminal: React.FC = () => {
   const { login, register, error, isLoading } = useAuth();
@@ -60,6 +61,11 @@ export const HolographicTerminal: React.FC = () => {
       <div className="absolute top-6 left-6 text-xs font-mono text-cyan-500/40 flex items-center gap-2">
         <Terminal className="w-4 h-4 animate-pulse" />
         <span>NODE: ASIA-SOUTH-PRIMARY // CIB-CLEARANCE-PORTAL</span>
+      </div>
+
+      {/* Fullscreen Immersion Toggle */}
+      <div className="absolute top-6 right-6">
+        <FullscreenButton showLabel={true} />
       </div>
 
       <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
