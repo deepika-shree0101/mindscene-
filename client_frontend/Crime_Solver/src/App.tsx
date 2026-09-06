@@ -6,22 +6,22 @@ import { CaseDashboard } from './components/CaseDashboard';
 import { CaseBriefingModal } from './components/CaseBriefingModal';
 import { CrimeSceneExplorer } from './components/CrimeSceneExplorer';
 import { HorrorAmbience } from './components/HorrorAmbience';
+import { DEFAULT_CASES } from './data/defaultCases';
 import type { CaseData } from './types';
 
 const InvestigationApp: React.FC = () => {
   const { user, updateUserScore } = useAuth();
-  const [cases, setCases] = useState<CaseData[]>([]);
+  const [cases, setCases] = useState<CaseData[]>(DEFAULT_CASES);
   const [selectedCase, setSelectedCase] = useState<CaseData | null>(null);
   const [showBriefing, setShowBriefing] = useState<boolean>(false);
   const [isInInvestigation, setIsInInvestigation] = useState<boolean>(false);
-  const [isLoadingCases, setIsLoadingCases] = useState<boolean>(true);
+  const [isLoadingCases, setIsLoadingCases] = useState<boolean>(false);
 
-  // Fetch Cases from Spring Boot Backend
+  // Fetch Cases from Spring Boot Backend with automatic local fallback
   useEffect(() => {
     if (!user) return;
 
     const fetchCases = async () => {
-      setIsLoadingCases(true);
       try {
         const savedToken = localStorage.getItem('cib_token');
         const headers: Record<string, string> = {};
@@ -30,10 +30,12 @@ const InvestigationApp: React.FC = () => {
         const res = await fetch('/api/cases', { headers });
         if (res.ok) {
           const data = await res.json();
-          setCases(data);
+          if (Array.isArray(data) && data.length > 0) {
+            setCases(data);
+          }
         }
       } catch (err) {
-        console.error('Failed to load cases from backend', err);
+        console.warn('Backend offline or Netlify deployment mode: using bundled CIB case dossiers.', err);
       } finally {
         setIsLoadingCases(false);
       }

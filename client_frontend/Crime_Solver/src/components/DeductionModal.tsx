@@ -75,12 +75,75 @@ export const DeductionModal: React.FC<DeductionModalProps> = ({
         } else {
           sound.playAccessDenied();
         }
+        return;
       }
-    } catch (err) {
-      console.error('Deduction submission error', err);
-    } finally {
-      setIsSubmitting(false);
+    } catch {
+      // Standalone Netlify Mode: Client-Side Deductive Resolution
     }
+
+    // Client-side fallback evaluation
+    const isVanceCase = caseData.id.includes('blackwood') || caseData.title.toLowerCase().includes('blackwood');
+    const isKiraCase = caseData.id.includes('penthouse') || caseData.title.toLowerCase().includes('penthouse');
+
+    const isCorrect = isVanceCase
+      ? selectedCulpritId.toLowerCase().includes('vance')
+      : isKiraCase
+      ? selectedCulpritId.toLowerCase().includes('kira')
+      : true;
+
+    const crucialClueIds = isVanceCase
+      ? ['clue-med-note', 'clue-sedative-goblet', 'clue-orthopedic-shoe', 'clue-staged-lock']
+      : ['clue-tungsten-weight', 'clue-rogue-device'];
+
+    const crucialFound = crucialClueIds.filter((id) => selectedEvidenceIds.includes(id));
+    const crucialMissed = crucialClueIds.filter((id) => !selectedEvidenceIds.includes(id));
+
+    let score = 0;
+    if (isCorrect) score += 500;
+    score += crucialFound.length * 150;
+    if (timeTakenSeconds < 300) score += 200;
+
+    const solved = isCorrect && crucialFound.length >= 1;
+    const badge = solved ? (score >= 900 ? 'MASTER DETECTIVE' : 'CLEARED INVESTIGATOR') : 'INCONCLUSIVE LEAD';
+
+    const localResult: DeductionResult = {
+      isCorrect: solved,
+      score,
+      title: solved
+        ? 'CASE CLOSED // HOMICIDE ARREST AUTHORIZED'
+        : 'CASE UNSOLVED // INSUFFICIENT PROBABLE CAUSE',
+      evaluationSummary: solved
+        ? 'Outstanding forensic deduction, Detective. Your analysis correctly unmasked the perpetrator and tied the physical evidence together without reasonable doubt.'
+        : 'The evidence presented was insufficient or the accused suspect holds a verified alibi. The District Attorney cannot proceed with formal charges.',
+      trueCulpritName: isVanceCase ? 'Dr. Julian Vance (Personal Physician)' : 'Kira Mercer (Chief Cybersecurity Architect)',
+      trueMotive: isVanceCase
+        ? 'Lord Blackwood discovered Dr. Vance was embezzling funds from the estate medical foundation and was preparing to report him to the medical board.'
+        : 'Recruited by an international syndicate with a multi-million dollar bounty for the Heart of Kronos diamond.',
+      trueSequenceOfEvents: isVanceCase
+        ? 'Dr. Vance spiked Lord Blackwood’s wine with a neuro-tranquilizer. Once unconscious, Vance cut the balcony latch from inside to stage a burglary, then moved the victim through the secret bookshelf passage to an awaiting speedboat at the cliff dock.'
+        : 'Kira installed a rogue transceiver behind the server rack to broadcast a camera loop, entered the vault with master admin credentials, and swapped the gem with an exact-weight tungsten slug.',
+      crucialCluesFound: crucialFound,
+      crucialCluesMissed: crucialMissed,
+      totalCluesDiscovered: discoveredClues.length,
+      totalCluesInCase: caseData.clues.length,
+      timeTakenSeconds,
+      badgeAwarded: badge,
+    };
+
+    setResult(localResult);
+    if (solved) {
+      sound.playCaseSolved();
+      confetti({
+        particleCount: 120,
+        spread: 80,
+        origin: { y: 0.6 },
+        colors: ['#f59e0b', '#38bdf8', '#fbbf24', '#34d399'],
+      });
+      onCaseSolved(score);
+    } else {
+      sound.playAccessDenied();
+    }
+    setIsSubmitting(false);
   };
 
   const formatTime = (secs: number) => {

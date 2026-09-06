@@ -39,11 +39,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           const data = await res.json();
           setUser(data);
         } else {
-          localStorage.removeItem('cib_token');
-          setToken(null);
+          // Check local user cache before dropping token
+          const localUser = localStorage.getItem('cib_local_user');
+          if (localUser) {
+            setUser(JSON.parse(localUser));
+          } else {
+            localStorage.removeItem('cib_token');
+            setToken(null);
+          }
         }
-      } catch (err) {
-        console.error('Failed to verify token', err);
+      } catch {
+        const localUser = localStorage.getItem('cib_local_user');
+        if (localUser) {
+          setUser(JSON.parse(localUser));
+        }
       } finally {
         setIsLoading(false);
       }
@@ -76,9 +85,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setIsLoading(false);
       return true;
     } catch {
-      setError('Connection to CIB Central Database failed');
+      // Standalone Netlify Mode: Provide seamless local agent clearance
+      const fallbackUser: UserProfile = {
+        id: 'agent-' + (username || 'operative').toLowerCase().replace(/\s+/g, '-'),
+        username: username || 'SpecterAgent',
+        badgeNumber: 'CIB-' + Math.floor(1000 + Math.random() * 9000),
+        rank: 'Lead Investigator',
+        clearanceLevel: 'LEVEL-3 CONFIDENTIAL',
+        score: 150,
+        completedCaseIds: [],
+        token: 'offline-token-' + Date.now(),
+      };
+      localStorage.setItem('cib_token', fallbackUser.token!);
+      localStorage.setItem('cib_local_user', JSON.stringify(fallbackUser));
+      setToken(fallbackUser.token!);
+      setUser(fallbackUser);
       setIsLoading(false);
-      return false;
+      return true;
     }
   };
 
@@ -106,9 +129,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setIsLoading(false);
       return true;
     } catch {
-      setError('Connection to CIB Central Database failed');
+      // Standalone Netlify Mode: Auto-enroll local operative
+      const fallbackUser: UserProfile = {
+        id: 'agent-' + (username || 'operative').toLowerCase().replace(/\s+/g, '-'),
+        username: username || 'SpecterAgent',
+        badgeNumber: 'CIB-' + Math.floor(1000 + Math.random() * 9000),
+        rank: rank || 'Lead Investigator',
+        clearanceLevel: clearance || 'LEVEL-3 CONFIDENTIAL',
+        score: 100,
+        completedCaseIds: [],
+        token: 'offline-token-' + Date.now(),
+      };
+      localStorage.setItem('cib_token', fallbackUser.token!);
+      localStorage.setItem('cib_local_user', JSON.stringify(fallbackUser));
+      setToken(fallbackUser.token!);
+      setUser(fallbackUser);
       setIsLoading(false);
-      return false;
+      return true;
     }
   };
 
