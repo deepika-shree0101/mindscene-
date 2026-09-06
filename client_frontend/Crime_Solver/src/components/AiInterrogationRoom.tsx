@@ -7,6 +7,7 @@ import {
   CheckCircle2, Folder 
 } from 'lucide-react';
 import { ThreeInterrogationCell } from './ThreeInterrogationCell';
+import { dialogueManager } from '../utils/suspectDialogueEngine';
 import type { CaseData, Clue, Suspect } from '../types';
 
 interface AiInterrogationRoomProps {
@@ -160,78 +161,23 @@ export const AiInterrogationRoom: React.FC<AiInterrogationRoomProps> = ({
     return () => cancelAnimationFrame(animationFrameId);
   }, [stressLevel, polygraphSpike]);
 
-  // Intelligent Contextual Response Generator
-  const generateSuspectResponse = (userPrompt: string, presentedClue?: Clue): { text: string; stressChange: number; isLie: boolean } => {
-    const q = userPrompt.toLowerCase();
-    const suspect = currentSuspect;
-    let stressChange = 0;
-    let isLie = false;
-    let reply = '';
-
-    // If a physical clue was presented
-    if (presentedClue) {
-      sound.playGlitch();
-      const clueTitle = presentedClue.title.toLowerCase();
-      isLie = true;
-      stressChange = 25;
-
-      if (clueTitle.includes('note') || clueTitle.includes('letter') || clueTitle.includes('document')) {
-        reply = `(Eyes darting nervously) That letter?! Where did you find that?! It doesn't prove anything! I was just consulting about dosage, nothing more!`;
-      } else if (clueTitle.includes('glass') || clueTitle.includes('wine') || clueTitle.includes('poison') || clueTitle.includes('chemical')) {
-        reply = `(Voice cracking) The goblet... I never touched his drink! Someone else must have poured it! You can't pin this on me!`;
-      } else if (clueTitle.includes('key') || clueTitle.includes('passage') || clueTitle.includes('bookshelf') || clueTitle.includes('door')) {
-        reply = `(Sweat forming on brow) You found the hidden mechanism...? Look, the secret corridor has been in this house for decades. That doesn't make me a killer!`;
-      } else if (clueTitle.includes('boot') || clueTitle.includes('footprint') || clueTitle.includes('fingerprint') || clueTitle.includes('knife')) {
-        reply = `(Breathing heavily) That's... impossible. I wore... I mean, I wasn't anywhere near the balcony! Stop twisting my words!`;
-      } else {
-        reply = `(Backing against the wall) Why are you showing me ${presentedClue.title}?! I don't know what you're trying to imply, Detective!`;
-      }
-
-      return { text: reply, stressChange, isLie };
-    }
-
-    // Checking questions by topic
-    if (q.includes('alibi') || q.includes('where were you') || q.includes('time') || q.includes('clock') || q.includes('midnight') || q.includes('23:45')) {
-      isLie = true;
-      stressChange = 12;
-      reply = `${suspect.alibi} I've told your officers three times already. Why don't you check the hallway cameras instead of grilling me?!`;
-    } else if (q.includes('motive') || q.includes('why') || q.includes('money') || q.includes('debt') || q.includes('will') || q.includes('inheritance') || q.includes('cash')) {
-      isLie = true;
-      stressChange = 18;
-      reply = `${suspect.motive ? `Look: ${suspect.motive}. But that doesn't mean I wanted them dead!` : "I had no reason to harm anyone! Money isn't everything!"}`;
-    } else if (q.includes('relationship') || q.includes('victim') || q.includes('lord') || q.includes('arthur') || q.includes('know him') || q.includes('friend')) {
-      stressChange = 8;
-      reply = `My relationship was strictly ${suspect.relationship || 'professional'}. We had disagreements like anyone else, but I respected him.`;
-    } else if (q.includes('weapon') || q.includes('poison') || q.includes('tranquilizer') || q.includes('murder') || q.includes('kill') || q.includes('stab')) {
-      isLie = true;
-      stressChange = 22;
-      reply = `(Slamming desk) Murder?! You have no right to throw around accusations like that without definitive forensic proof!`;
-    } else if (q.includes('confess') || q.includes('admit') || q.includes('give up') || q.includes('caught')) {
-      if (stressLevel > 75) {
-        stressChange = 20;
-        reply = `(Head in hands, hyperventilating) Alright! Alright! I was there! But it was an accident, I swear to God! It wasn't supposed to end like this!`;
-      } else {
-        stressChange = 15;
-        reply = `Confess to what?! You're desperate, Detective. You have nothing on me and you know it.`;
-      }
-    } else if (q.includes('fingerprint') || q.includes('dna') || q.includes('camera') || q.includes('witness') || q.includes('proof') || q.includes('clue')) {
-      stressChange = 15;
-      isLie = true;
-      reply = `If you had real proof, you'd have charged me already. You're fishing in the dark hoping I'll slip up.`;
-    } else {
-      // Dynamic fallback
-      const deflections = [
-        `You're wasting valuable time questioning me while the real culprit is getting away.`,
-        `Ask whatever you want. My story hasn't changed and it isn't going to.`,
-        `I demand to speak to my legal counsel if you continue this badgering.`,
-        `Look closely at the others in the manor. I'm not the one with blood on my hands.`,
-        `Think what you want, Detective. The physical evidence will clear my name.`
-      ];
-      reply = deflections[Math.floor(Math.random() * deflections.length)];
-      stressChange = 6;
-    }
-
-    return { text: reply, stressChange, isLie };
+  // Intelligent Contextual Response Generator with Slang Normalization & Anti-Repetition
+  const generateSuspectResponse = (
+    userPrompt: string,
+    presentedClue?: Clue
+  ): { text: string; stressChange: number; isLie: boolean } => {
+    const res = dialogueManager.getResponse(
+      userPrompt,
+      currentSuspect,
+      caseData,
+      stressLevel,
+      presentedClue
+    );
+    return {
+      text: res.text,
+      stressChange: res.stressChange,
+      isLie: res.isLie,
+    };
   };
 
   const handleSendMessage = async (textToSend: string, presentedClue?: Clue) => {
@@ -261,6 +207,14 @@ export const AiInterrogationRoom: React.FC<AiInterrogationRoomProps> = ({
     let isLie = false;
     let stressIncrease = 10;
 
+    const cannedDeflections = [
+      "I don't have to listen to these wild accusations",
+      "You're twisting my words, detective",
+      "Is this a joke? Because I'm not laughing",
+      "I want to speak to my lawyer before I say another word",
+      "You have absolutely zero proof of that"
+    ];
+
     try {
       const savedToken = localStorage.getItem('cib_token');
       const res = await fetch('/api/ai/interrogate', {
@@ -279,7 +233,8 @@ export const AiInterrogationRoom: React.FC<AiInterrogationRoomProps> = ({
 
       if (res.ok) {
         const data = await res.json();
-        if (data.response && !data.response.includes('UNKNOWN SUSPECT')) {
+        const isCanned = cannedDeflections.some((def) => data.response?.includes(def));
+        if (data.response && !data.response.includes('UNKNOWN SUSPECT') && !isCanned) {
           suspectReply = data.response;
           stressIncrease = data.mood === 'HOSTILE' ? 18 : data.mood === 'CRACKING' ? 25 : 12;
           isLie = data.mood !== 'CALM';
@@ -289,7 +244,7 @@ export const AiInterrogationRoom: React.FC<AiInterrogationRoomProps> = ({
       // Offline fallback
     }
 
-    // If backend did not provide a rich answer, use local intelligence
+    // If backend did not provide a unique generative answer, use our intelligent local dialogue engine
     if (!suspectReply || suspectReply.length < 10) {
       const local = generateSuspectResponse(textToSend, presentedClue);
       suspectReply = local.text;
@@ -629,26 +584,45 @@ export const AiInterrogationRoom: React.FC<AiInterrogationRoomProps> = ({
             )}
 
             {/* Quick Tactical Question Buttons */}
-            <div className="px-4 py-2 bg-black/80 border-t border-red-900/40 flex flex-wrap gap-1.5 text-xs font-mono">
-              <span className="text-[10px] text-red-500/70 font-bold self-center mr-1">QUICK PRESS:</span>
-              <button
-                onClick={() => handleSendMessage("Where exactly were you at 23:45 during the power cut?")}
-                className="px-2.5 py-1 rounded bg-red-950/40 border border-red-900/50 hover:border-red-400 text-red-300 text-[11px] transition-colors cursor-pointer"
-              >
-                Press on Alibi
-              </button>
-              <button
-                onClick={() => handleSendMessage("Who stands to gain financially from Lord Blackwood's disappearance?")}
-                className="px-2.5 py-1 rounded bg-red-950/40 border border-red-900/50 hover:border-red-400 text-red-300 text-[11px] transition-colors cursor-pointer"
-              >
-                Inquire about Motive
-              </button>
-              <button
-                onClick={() => handleSendMessage("Our forensic lab found tranquilizer residue in the wine goblet.")}
-                className="px-2.5 py-1 rounded bg-red-950/40 border border-red-900/50 hover:border-red-400 text-red-300 text-[11px] transition-colors cursor-pointer"
-              >
-                Confront with Poison
-              </button>
+            <div className="px-4 py-2 bg-black/80 border-t border-red-900/40 flex flex-wrap items-center gap-1.5 text-xs font-mono">
+              <span className="text-[10px] text-red-500/70 font-bold self-center mr-1">TACTICAL PRESS:</span>
+              {(() => {
+                const name = currentSuspect.name.toLowerCase();
+                const prompts = name.includes('vance')
+                  ? [
+                      { label: 'Dosage Note', query: 'Why was your handwritten note about inducing paralysis under the desk?' },
+                      { label: 'Spiked Goblet', query: "What tranquilizer did you dissolve into Lord Blackwood's wine?" },
+                      { label: 'Orthopedic Boots', query: 'Why do the balcony mud footprints match your orthopedic footwear?' },
+                      { label: 'Secret Passage', query: 'Did you move Lord Blackwood through the bookshelf secret corridor?' },
+                    ]
+                  : name.includes('evelyn')
+                  ? [
+                      { label: 'Terrace Alibi', query: 'Can Butler Graves confirm you were on the terrace smoking at 23:30?' },
+                      { label: 'Disinherited Will', query: 'How furious were you when your father cut you out of the estate will?' },
+                      { label: 'Vance Sighting', query: 'What did you see Dr. Vance doing near the boathouse with a bag?' },
+                    ]
+                  : name.includes('graves')
+                  ? [
+                      { label: 'Study Master Key', query: 'Did anyone borrow the master study key from your waistcoat?' },
+                      { label: 'Late Evening Drinks', query: "Who prepared Lord Blackwood's wine before midnight?" },
+                      { label: 'Vance Altercation', query: 'Did you overhear an argument between Lord Blackwood and Dr. Vance?' },
+                    ]
+                  : [
+                      { label: 'Alibi at 23:45', query: 'Where were you at 23:45 when the alarm sounded?' },
+                      { label: 'Financial Motive', query: 'Did you have any disagreements or financial disputes with the victim?' },
+                      { label: 'Suspicious Traces', query: 'Did you see or hear anyone entering the restricted quarters?' },
+                    ];
+
+                return prompts.map((p, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleSendMessage(p.query)}
+                    className="px-2.5 py-1 rounded bg-red-950/40 border border-red-900/50 hover:border-red-400 text-red-300 text-[11px] transition-colors cursor-pointer whitespace-nowrap"
+                  >
+                    {p.label}
+                  </button>
+                ));
+              })()}
             </div>
 
             {/* Message Input Form */}
