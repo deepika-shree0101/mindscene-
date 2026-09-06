@@ -5,6 +5,7 @@ import { HolographicTerminal } from './components/HolographicTerminal';
 import { CaseDashboard } from './components/CaseDashboard';
 import { CaseBriefingModal } from './components/CaseBriefingModal';
 import { CrimeSceneExplorer } from './components/CrimeSceneExplorer';
+import { HorrorAmbience } from './components/HorrorAmbience';
 import type { CaseData } from './types';
 
 const InvestigationApp: React.FC = () => {
@@ -60,6 +61,9 @@ const InvestigationApp: React.FC = () => {
   return (
     <div className="relative min-h-screen bg-[#050000] text-red-100 font-sans selection:bg-red-900/50 selection:text-red-200">
       
+      {/* Global Horror Ambience (Sound & Lightning) */}
+      <HorrorAmbience />
+
       {/* Dynamic Looping Scary Video Background */}
       <ScaryVideoBackground variant={isInInvestigation ? 'scene' : 'menu'} />
 
