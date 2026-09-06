@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Send, X, AlertTriangle, UserMinus } from 'lucide-react';
+import { Send, X, UserMinus } from 'lucide-react';
 import type { CaseData } from '../types';
 
 interface AiInterrogationRoomProps {

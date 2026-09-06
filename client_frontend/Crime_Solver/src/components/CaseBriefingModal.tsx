@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import type { CaseData } from '../types';
 import { sound } from '../utils/soundEngine';
 import { FileText, UserCheck, ArrowRight, X, Clock, MapPin, AlertTriangle, Users, ShieldAlert } from 'lucide-react';
