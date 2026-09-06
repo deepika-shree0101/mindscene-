@@ -84,16 +84,53 @@ export const DeductionModal: React.FC<DeductionModalProps> = ({
     // Client-side fallback evaluation
     const isVanceCase = caseData.id.includes('blackwood') || caseData.title.toLowerCase().includes('blackwood');
     const isKiraCase = caseData.id.includes('penthouse') || caseData.title.toLowerCase().includes('penthouse');
+    const isCryptCase = caseData.id.includes('crypt') || caseData.title.toLowerCase().includes('crypt');
+    const isCyberCase = caseData.id.includes('cyber') || caseData.title.toLowerCase().includes('cyber') || caseData.title.toLowerCase().includes('neon');
+    const isShipCase = caseData.id.includes('ship') || caseData.title.toLowerCase().includes('ship') || caseData.title.toLowerCase().includes('ghost');
 
-    const isCorrect = isVanceCase
-      ? selectedCulpritId.toLowerCase().includes('vance')
-      : isKiraCase
-      ? selectedCulpritId.toLowerCase().includes('kira')
-      : true;
+    let isCorrect = false;
+    let trueCulpritName = '';
+    let trueMotive = '';
+    let trueSequenceOfEvents = '';
+    let crucialClueIds: string[] = [];
 
-    const crucialClueIds = isVanceCase
-      ? ['clue-med-note', 'clue-sedative-goblet', 'clue-orthopedic-shoe', 'clue-staged-lock']
-      : ['clue-tungsten-weight', 'clue-rogue-device'];
+    if (isVanceCase) {
+      isCorrect = selectedCulpritId.toLowerCase().includes('vance');
+      trueCulpritName = 'Dr. Julian Vance (Personal Physician)';
+      trueMotive = 'Lord Blackwood discovered Dr. Vance was embezzling funds from the estate medical foundation and was preparing to report him to the medical board.';
+      trueSequenceOfEvents = 'Dr. Vance spiked Lord Blackwood’s wine with a neuro-tranquilizer. Once unconscious, Vance cut the balcony latch from inside to stage a burglary, then moved the victim through the secret bookshelf passage to an awaiting speedboat at the cliff dock.';
+      crucialClueIds = ['clue-med-note', 'clue-sedative-goblet', 'clue-orthopedic-shoe', 'clue-staged-lock'];
+    } else if (isKiraCase) {
+      isCorrect = selectedCulpritId.toLowerCase().includes('kira');
+      trueCulpritName = 'Kira Mercer (Chief Cybersecurity Architect)';
+      trueMotive = 'Recruited by an international syndicate with a $5M offshore bounty to extract the Heart of Kronos diamond.';
+      trueSequenceOfEvents = 'Kira installed a rogue transceiver behind the server rack to broadcast a camera loop, entered the vault with master admin credentials, and swapped the gem with an exact-weight tungsten slug.';
+      crucialClueIds = ['clue-tungsten-weight', 'clue-rogue-device', 'clue-optical-jumper', 'clue-cloned-keycard'];
+    } else if (isCryptCase) {
+      isCorrect = selectedCulpritId.toLowerCase().includes('raymond');
+      trueCulpritName = 'Brother Raymond Cruz (Assistant Archivist & Acolyte)';
+      trueMotive = 'Blackmailed and promised 2,000,000 Swiss Francs by an antiquities smuggling ring in Munich to deliver the 12th-century Codex of Solomon.';
+      trueSequenceOfEvents = 'Brother Raymond poisoned Father Gabriel’s sacramental wine with monkshood aconite. When the archivist collapsed, Raymond struck him with the monastery crowbar, pried open the reliquary, grabbed the Codex, fled through the bone catacombs, and stashed the courier satchel in the belfry before sounding the bells to create an alibi.';
+      crucialClueIds = ['clue-aconite-chalice', 'clue-ebony-rosary', 'clue-missing-codex', 'clue-altar-crowbar', 'clue-courier-satchel'];
+    } else if (isCyberCase) {
+      isCorrect = selectedCulpritId.toLowerCase().includes('maya');
+      trueCulpritName = 'Dr. Maya Lin (Senior Neural Interface Scientist)';
+      trueMotive = 'Bribed with 50,000,000 Neo-Yen and a VP appointment at rival Shinwa Cybernetics to steal the sovereign Project Kronos AGI algorithm.';
+      trueSequenceOfEvents = 'Dr. Maya Lin shared a spiked whiskey nightcap with Kenji in the VIP lounge. Once the paralytic immobilized him at his terminal, she injected a high-voltage firmware overload into his cortical jack, extracted the quantum AGI core caddy, wiped the logs with a Shinwa EMP degausser, and rappelled down the rooftop exhaust shaft.';
+      crucialClueIds = ['clue-fried-neural-jack', 'clue-dopamine-hypo', 'clue-quantum-caddy', 'clue-drugged-whiskey', 'clue-shinwa-contract'];
+    } else if (isShipCase) {
+      isCorrect = selectedCulpritId.toLowerCase().includes('duncan');
+      trueCulpritName = 'First Mate Duncan Cross (Second-in-Command)';
+      trueMotive = 'Orchestrated a pirate mutiny to steal $15M in Swiss gold bullion, planning to sink the freighter to the ocean floor to fake a catastrophic maritime storm loss.';
+      trueSequenceOfEvents = 'Duncan severed the emergency radio VHF line to prevent distress transmissions, bludgeoned Captain Vance with a heavy pipe wrench at the helm, and used oxy-acetylene torches in Hold 3 to offload the gold bullion to an awaiting unflagged trawler. He then jammed the engine seacock open to sink the evidence before abandoning ship.';
+      crucialClueIds = ['clue-cut-radio-line', 'clue-torched-bullion-safe', 'clue-duncan-zippo', 'clue-sabotaged-seacock', 'clue-murder-wrench', 'clue-captains-log'];
+    } else {
+      isCorrect = true;
+      trueCulpritName = caseData.suspects[0]?.name || 'Unknown Perpetrator';
+      trueMotive = caseData.suspects[0]?.motive || 'Under investigation.';
+      trueSequenceOfEvents = 'The perpetrator executed the crime based on the collected physical evidence.';
+      crucialClueIds = caseData.clues.filter((c) => c.isCrucial).map((c) => c.id);
+    }
 
     const crucialFound = crucialClueIds.filter((id) => selectedEvidenceIds.includes(id));
     const crucialMissed = crucialClueIds.filter((id) => !selectedEvidenceIds.includes(id));
@@ -115,13 +152,9 @@ export const DeductionModal: React.FC<DeductionModalProps> = ({
       evaluationSummary: solved
         ? 'Outstanding forensic deduction, Detective. Your analysis correctly unmasked the perpetrator and tied the physical evidence together without reasonable doubt.'
         : 'The evidence presented was insufficient or the accused suspect holds a verified alibi. The District Attorney cannot proceed with formal charges.',
-      trueCulpritName: isVanceCase ? 'Dr. Julian Vance (Personal Physician)' : 'Kira Mercer (Chief Cybersecurity Architect)',
-      trueMotive: isVanceCase
-        ? 'Lord Blackwood discovered Dr. Vance was embezzling funds from the estate medical foundation and was preparing to report him to the medical board.'
-        : 'Recruited by an international syndicate with a multi-million dollar bounty for the Heart of Kronos diamond.',
-      trueSequenceOfEvents: isVanceCase
-        ? 'Dr. Vance spiked Lord Blackwood’s wine with a neuro-tranquilizer. Once unconscious, Vance cut the balcony latch from inside to stage a burglary, then moved the victim through the secret bookshelf passage to an awaiting speedboat at the cliff dock.'
-        : 'Kira installed a rogue transceiver behind the server rack to broadcast a camera loop, entered the vault with master admin credentials, and swapped the gem with an exact-weight tungsten slug.',
+      trueCulpritName,
+      trueMotive,
+      trueSequenceOfEvents,
       crucialCluesFound: crucialFound,
       crucialCluesMissed: crucialMissed,
       totalCluesDiscovered: discoveredClues.length,
