@@ -3,7 +3,8 @@ import type { CaseData } from '../types';
 import { sound } from '../utils/soundEngine';
 import { 
   UserCheck, ArrowRight, X, Clock, MapPin, 
-  AlertTriangle, Users, ShieldAlert, Video, Volume2, VolumeX, Radio
+  AlertTriangle, Users, ShieldAlert, Video, Volume2, VolumeX, Radio,
+  ListOrdered
 } from 'lucide-react';
 
 interface CaseBriefingModalProps {
@@ -191,6 +192,93 @@ export const CaseBriefingModal: React.FC<CaseBriefingModalProps> = ({
             </p>
           </div>
 
+        </div>
+
+        {/* 7-Step Detective Protocol & Guidelines */}
+        <div className="mb-6 relative z-20 bg-black/90 border border-red-800/80 rounded-2xl p-4 sm:p-5 shadow-xl">
+          <div className="flex items-center justify-between border-b border-red-900/60 pb-2.5 mb-3.5">
+            <div className="flex items-center gap-2 text-xs font-mono font-bold text-red-400 uppercase tracking-wider">
+              <ListOrdered className="w-4 h-4 text-red-500" />
+              <span>INVESTIGATION PROTOCOL: 7-STEP OPERATIONAL ROADMAP</span>
+            </div>
+            <span className="text-[10px] font-mono bg-red-950/80 border border-red-700/60 text-red-300 px-2 py-0.5 rounded">
+              STANDARD C.I.B. PROCEDURE
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs font-sans">
+            <div className="bg-[#120404] border border-red-900/40 p-3 rounded-xl flex items-start gap-2.5">
+              <span className="w-6 h-6 rounded-full bg-red-700 text-white font-mono font-black text-xs flex items-center justify-center shrink-0">1</span>
+              <div>
+                <h4 className="font-bold text-white text-[12px]">Intelligence Briefing</h4>
+                <p className="text-[11px] text-red-200/80 mt-0.5 leading-snug">
+                  Absorb victim records, incident timeline, and suspect motives before entering the scene.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-[#120404] border border-red-900/40 p-3 rounded-xl flex items-start gap-2.5">
+              <span className="w-6 h-6 rounded-full bg-red-700 text-white font-mono font-black text-xs flex items-center justify-center shrink-0">2</span>
+              <div>
+                <h4 className="font-bold text-white text-[12px]">Scene Exploration (2D / 3D)</h4>
+                <p className="text-[11px] text-red-200/80 mt-0.5 leading-snug">
+                  Toggle between 360° 3D room and 2.5D tactical beam. Toggle UV Blacklight for hidden traces.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-[#120404] border border-red-900/40 p-3 rounded-xl flex items-start gap-2.5">
+              <span className="w-6 h-6 rounded-full bg-red-700 text-white font-mono font-black text-xs flex items-center justify-center shrink-0">3</span>
+              <div>
+                <h4 className="font-bold text-white text-[12px]">Collect & Secure Room</h4>
+                <p className="text-[11px] text-red-200/80 mt-0.5 leading-snug">
+                  Click hotspots to secure clues safely into your Vault. Heartbeats guide you near traces.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-[#120404] border border-red-900/40 p-3 rounded-xl flex items-start gap-2.5">
+              <span className="w-6 h-6 rounded-full bg-red-700 text-white font-mono font-black text-xs flex items-center justify-center shrink-0">4</span>
+              <div>
+                <h4 className="font-bold text-white text-[12px]">Room Cleared → Next Scene</h4>
+                <p className="text-[11px] text-red-200/80 mt-0.5 leading-snug">
+                  Look for "Room Cleared" alert, then use the top room switcher to canvas other crime scenes.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-[#120404] border border-red-900/40 p-3 rounded-xl flex items-start gap-2.5">
+              <span className="w-6 h-6 rounded-full bg-red-700 text-white font-mono font-black text-xs flex items-center justify-center shrink-0">5</span>
+              <div>
+                <h4 className="font-bold text-white text-[12px]">Inspect Clues in 3D Vault</h4>
+                <p className="text-[11px] text-red-200/80 mt-0.5 leading-snug">
+                  Open Evidence Vault to inspect 3D objects with full zoom/rotation without WebGL conflicts.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-[#120404] border border-red-900/40 p-3 rounded-xl flex items-start gap-2.5">
+              <span className="w-6 h-6 rounded-full bg-red-700 text-white font-mono font-black text-xs flex items-center justify-center shrink-0">6</span>
+              <div>
+                <h4 className="font-bold text-white text-[12px]">AI Suspect Interrogation</h4>
+                <p className="text-[11px] text-red-200/80 mt-0.5 leading-snug">
+                  Grill suspects, present collected physical evidence, and watch their deception stress meters spike.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-[#120404] border border-red-700/60 p-3 rounded-xl flex items-start gap-2.5 sm:col-span-2 lg:col-span-3 bg-gradient-to-r from-red-950/60 to-black">
+              <span className="w-6 h-6 rounded-full bg-red-600 text-white font-mono font-black text-xs flex items-center justify-center shrink-0">7</span>
+              <div>
+                <h4 className="font-bold text-red-300 text-[12px]">
+                  Case Deduction & Verdict (Success or Failure)
+                </h4>
+                <p className="text-[11px] text-red-200/90 mt-0.5 leading-snug">
+                  Click <strong>SOLVE CASE</strong>, select the culprit, formulate your motive conclusion, attach corroborating evidence, and receive the definitive Case Solved or Case Unsolved verdict!
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Suspects Briefing Cards */}

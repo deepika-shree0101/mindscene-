@@ -110,9 +110,10 @@ export const CrimeSceneExplorer: React.FC<CrimeSceneExplorerProps> = ({
           setTimeout(() => setDiscoveryFlash(false), 200);
           sound.playClueDiscovered();
 
-          setDiscoveredClueIds((prev) => [...prev, clue.id]);
-          setScanMessage(`CRUCIAL EVIDENCE LOGGED: "${clue.title.toUpperCase()}"`);
-          setTimeout(() => setScanMessage(null), 4000);
+          const updatedClues = [...discoveredClueIds, clue.id];
+          setDiscoveredClueIds(updatedClues);
+          setScanMessage(`🎯 EVIDENCE SECURED: "${clue.title.toUpperCase()}" // STORED IN VAULT`);
+          setTimeout(() => setScanMessage(null), 4500);
 
           // Sync discovery to backend
           try {
@@ -128,11 +129,26 @@ export const CrimeSceneExplorer: React.FC<CrimeSceneExplorerProps> = ({
           } catch (e) {
             console.error('Failed to sync discovery', e);
           }
+        } else {
+          sound.playFlashlightClick();
+          setScanMessage(`ALREADY SECURED: "${clue.title.toUpperCase()}" // IN EVIDENCE VAULT`);
+          setTimeout(() => setScanMessage(null), 3000);
         }
-        setInspectingClue(clue);
       }
     }
   };
+
+  const currentRoomClueIds = activeScene.hotspots
+    .map((h) => h.linkedClueId)
+    .filter((id): id is string => Boolean(id));
+
+  const isCurrentRoomCleared =
+    currentRoomClueIds.length > 0 &&
+    currentRoomClueIds.every((id) => discoveredClueIds.includes(id));
+
+  const allCaseCluesCollected =
+    caseData.clues.length > 0 &&
+    discoveredClueIds.length >= caseData.clues.length;
 
   const discoveredClues = caseData.clues.filter((c) => discoveredClueIds.includes(c.id));
 
@@ -189,6 +205,11 @@ export const CrimeSceneExplorer: React.FC<CrimeSceneExplorerProps> = ({
         <div className="flex items-center gap-1 bg-black/80 p-1 rounded-xl border border-red-900/60">
           {caseData.scenes.map((scene, idx) => {
             const isCurrent = activeSceneIndex === idx;
+            const sceneClueIds = scene.hotspots.map((h) => h.linkedClueId).filter(Boolean);
+            const isSceneCleared =
+              sceneClueIds.length > 0 &&
+              sceneClueIds.every((id) => discoveredClueIds.includes(id!));
+
             return (
               <button
                 key={scene.id}
@@ -199,11 +220,18 @@ export const CrimeSceneExplorer: React.FC<CrimeSceneExplorerProps> = ({
                 className={`px-3 py-1.5 rounded-lg font-sans text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   isCurrent
                     ? 'bg-red-800 text-white shadow-md shadow-red-950'
+                    : isSceneCleared
+                    ? 'text-emerald-400 bg-emerald-950/40 hover:bg-emerald-950/70 border border-emerald-700/50'
                     : 'text-red-400/70 hover:text-red-200 hover:bg-red-950/40'
                 }`}
               >
                 <MapPin className="w-3 h-3" />
                 <span>{scene.name}</span>
+                {isSceneCleared && (
+                  <span className="text-[10px] bg-emerald-600 text-black font-black px-1 rounded-full">
+                    ✓
+                  </span>
+                )}
               </button>
             );
           })}
@@ -375,24 +403,52 @@ export const CrimeSceneExplorer: React.FC<CrimeSceneExplorerProps> = ({
             </p>
           </div>
 
+          {/* Room Clearance Notification Banner */}
+          {isCurrentRoomCleared && (
+            <div className="absolute top-4 right-4 z-20 animate-in fade-in slide-in-from-top duration-300">
+              <div className="flex items-center gap-2.5 bg-emerald-950/95 border-2 border-emerald-500 text-emerald-200 px-4 py-2.5 rounded-2xl shadow-[0_0_30px_rgba(16,185,129,0.5)] font-mono text-xs font-bold backdrop-blur-md">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 animate-pulse shrink-0" />
+                <div>
+                  <div className="text-emerald-300 font-black tracking-wider">
+                    {allCaseCluesCollected
+                      ? 'ALL EVIDENCE IN CRIME SCENE FOUND!'
+                      : 'ROOM INVESTIGATION COMPLETE!'}
+                  </div>
+                  <div className="text-[11px] text-emerald-100 font-sans font-medium">
+                    {allCaseCluesCollected
+                      ? 'Open Evidence Vault to inspect 3D clues or proceed to Interrogation & Case Solve.'
+                      : 'All evidence in this room secured. Switch room at the top to continue.'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {viewMode === '3D' ? (
-            /* 360-Degree Three.js WebGL Crime Scene Engine */
-            <ThreeSceneRoom
-              activeScene={activeScene}
-              discoveredClueIds={discoveredClueIds}
-              isNightVisionOn={isNightVisionOn}
-              isUvMode={isUvMode}
-              onHotspotClick={handleHotspotClick}
-              onProximityChange={(dist) => {
-                if (dist < 3.5) {
-                  const now = Date.now();
-                  if (now - lastHeartbeatTime.current > 700) {
-                    sound.playHeartbeatOnce(1.3);
-                    lastHeartbeatTime.current = now;
+            /* 360-Degree Three.js WebGL Crime Scene Engine (Unmounted when Clue 3D modal is open to ensure single WebGL context) */
+            inspectingClue ? (
+              <div className="w-full h-full bg-black flex flex-col items-center justify-center text-red-400 font-mono text-xs gap-2">
+                <div className="w-8 h-8 rounded-full border-2 border-red-500 border-t-transparent animate-spin" />
+                <span>3D CRIME SCENE PAUSED // EVIDENCE VAULT 3D INSPECTOR ACTIVE</span>
+              </div>
+            ) : (
+              <ThreeSceneRoom
+                activeScene={activeScene}
+                discoveredClueIds={discoveredClueIds}
+                isNightVisionOn={isNightVisionOn}
+                isUvMode={isUvMode}
+                onHotspotClick={handleHotspotClick}
+                onProximityChange={(dist) => {
+                  if (dist < 3.5) {
+                    const now = Date.now();
+                    if (now - lastHeartbeatTime.current > 700) {
+                      sound.playHeartbeatOnce(1.3);
+                      lastHeartbeatTime.current = now;
+                    }
                   }
-                }
-              }}
-            />
+                }}
+              />
+            )
           ) : (
             /* 2.5D Tactical Forensic Beam Scan View */
             <div
