@@ -63,8 +63,8 @@ export const HorrorAmbience: React.FC = () => {
         <div className="fixed inset-0 z-50 pointer-events-none bg-white/25 mix-blend-screen transition-opacity duration-75" />
       )}
 
-      {/* Floating Audio & Horror Atmosphere Controls */}
-      <div className="fixed top-5 left-5 z-40 flex items-center gap-2">
+      {/* Floating Audio & Horror Atmosphere Controls (Bottom-Left so it never blocks top navigation) */}
+      <div className="fixed bottom-6 left-6 z-40 flex items-center gap-2">
         <button
           onClick={handleToggleSound}
           title={isMuted ? "Unmute Horror Ambience & Voices" : "Mute Sound"}
