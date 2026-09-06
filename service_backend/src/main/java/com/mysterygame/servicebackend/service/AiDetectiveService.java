@@ -100,30 +100,75 @@ public class AiDetectiveService {
 
     public AiChatResponse processInterrogation(AiChatRequest request) {
         String suspectName = request.getFocusedSubject() != null ? request.getFocusedSubject().toUpperCase() : "UNKNOWN SUSPECT";
-        String userQuery = request.getUserMessage().toLowerCase().trim();
-        String aiResponse;
+        String userQuery = request.getUserMessage();
+        String aiResponse = "";
         String mood = "DEFENSIVE";
 
-        if (userQuery.contains("alibi") || userQuery.contains("where were you")) {
-            aiResponse = suspectName + ": I already told the police, I was at home watching TV. You can't prove otherwise.";
-        } else if (userQuery.contains("blood") || userQuery.contains("weapon") || userQuery.contains("kill")) {
-            aiResponse = suspectName + ": Are you accusing me?! I've never seen that weapon in my life! I want my lawyer!";
-            mood = "HOSTILE";
-        } else if (userQuery.contains("money") || userQuery.contains("debt") || userQuery.contains("bank")) {
-            aiResponse = suspectName + ": Look, we all have financial troubles. That doesn't mean I'd resort to murder.";
-            mood = "NERVOUS";
-        } else if (request.getDiscoveredClueIds() != null && request.getDiscoveredClueIds().size() > 2) {
-            aiResponse = suspectName + ": Okay, okay... maybe I was near the scene. But I didn't do it! I swear!";
-            mood = "CRACKING";
-        } else {
-            aiResponse = suspectName + ": I have nothing to say to you. I don't answer to amateur detectives.";
-            mood = "DEFENSIVE";
+        // Try to use real Gemini API if key is present
+        if (geminiApiKey != null && !geminiApiKey.isEmpty() && !geminiApiKey.equals("your_super_secret_key_needs_to_be_long_enough")) {
+            try {
+                java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+                String prompt = "You are a murder suspect named " + suspectName + ". You are being interrogated by a detective. " +
+                        "The detective says: '" + userQuery + "'. " +
+                        "Respond defensively, in character, in 1 to 2 short sentences. Do not break character. Do not say you are an AI.";
+                
+                String requestBody = "{\"contents\":[{\"parts\":[{\"text\":\"" + prompt.replace("\"", "\\\"") + "\"}]}]}";
+                
+                java.net.http.HttpRequest httpRequest = java.net.http.HttpRequest.newBuilder()
+                        .uri(java.net.URI.create("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + geminiApiKey))
+                        .header("Content-Type", "application/json")
+                        .POST(java.net.http.HttpRequest.BodyPublishers.ofString(requestBody))
+                        .build();
+
+                java.net.http.HttpResponse<String> response = client.send(httpRequest, java.net.http.HttpResponse.BodyHandlers.ofString());
+                
+                if (response.statusCode() == 200) {
+                    // Quick JSON parse (avoiding heavy Jackson tree for simplicity)
+                    String body = response.body();
+                    int textIndex = body.indexOf("\"text\": \"");
+                    if (textIndex != -1) {
+                        int endIndex = body.indexOf("\"", textIndex + 9);
+                        String extracted = body.substring(textIndex + 9, endIndex).replace("\\n", " ").replace("\\\"", "\"");
+                        aiResponse = suspectName + ": " + extracted;
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Gemini API call failed", e);
+            }
+        }
+
+        // Advanced Fallback if API fails or is not configured
+        if (aiResponse.isEmpty()) {
+            String lowerQuery = userQuery.toLowerCase().trim();
+            java.util.List<String> deflections = java.util.List.of(
+                "I don't have to listen to these wild accusations.",
+                "You're twisting my words, detective. I'm done talking.",
+                "Is this a joke? Because I'm not laughing.",
+                "I want to speak to my lawyer before I say another word.",
+                "You have absolutely zero proof of that."
+            );
+
+            if (lowerQuery.contains("alibi") || lowerQuery.contains("where were you")) {
+                aiResponse = suspectName + ": Like I told the officers, I was completely alone that night. No, I don't have witnesses.";
+            } else if (lowerQuery.contains("blood") || lowerQuery.contains("weapon") || lowerQuery.contains("kill") || lowerQuery.contains("murder")) {
+                aiResponse = suspectName + ": Are you accusing me?! I've never seen that weapon in my life! This is harassment!";
+                mood = "HOSTILE";
+            } else if (lowerQuery.contains("money") || lowerQuery.contains("debt") || lowerQuery.contains("bank") || lowerQuery.contains("pay")) {
+                aiResponse = suspectName + ": Look, we all have financial troubles. It's none of your business anyway.";
+                mood = "NERVOUS";
+            } else if (request.getDiscoveredClueIds() != null && request.getDiscoveredClueIds().size() > 2 && lowerQuery.contains("evidence")) {
+                aiResponse = suspectName + ": Okay, okay... maybe I was near the scene. But I didn't do it! Someone is setting me up!";
+                mood = "CRACKING";
+            } else {
+                aiResponse = suspectName + ": " + deflections.get(new java.util.Random().nextInt(deflections.size()));
+                mood = "DEFENSIVE";
+            }
         }
 
         return AiChatResponse.builder()
                 .response(aiResponse)
-                .suggestedQuestion("Press them on their alibi")
-                .unlockedClueHints(List.of())
+                .suggestedQuestion("Press them harder on the timeline")
+                .unlockedClueHints(java.util.List.of())
                 .mood(mood)
                 .build();
     }
