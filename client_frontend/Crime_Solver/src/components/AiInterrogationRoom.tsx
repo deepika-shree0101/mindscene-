@@ -6,6 +6,7 @@ import {
   Volume2, VolumeX, Flame, 
   CheckCircle2, Folder 
 } from 'lucide-react';
+import { ThreeInterrogationCell } from './ThreeInterrogationCell';
 import type { CaseData, Clue, Suspect } from '../types';
 
 interface AiInterrogationRoomProps {
@@ -339,6 +340,9 @@ export const AiInterrogationRoom: React.FC<AiInterrogationRoomProps> = ({
       {/* Outer Enclosure */}
       <div className="w-full max-w-5xl bg-[#060202] border-2 border-red-800/60 rounded-2xl shadow-[0_0_80px_rgba(220,38,38,0.25)] flex flex-col h-[90vh] relative overflow-hidden text-slate-100 font-sans">
         
+        {/* 3D Real-Time Interrogation Chamber (Three.js with Swinging Lamp & Animated Avatar) */}
+        <ThreeInterrogationCell stressLevel={stressLevel} polygraphSpike={polygraphSpike} />
+
         {/* CRT Scanline & Blood Vignette */}
         <div className="absolute inset-0 scanlines pointer-events-none opacity-40 z-20" />
         <div className="absolute inset-0 shadow-[inset_0_0_120px_rgba(185,28,28,0.2)] pointer-events-none z-20" />
