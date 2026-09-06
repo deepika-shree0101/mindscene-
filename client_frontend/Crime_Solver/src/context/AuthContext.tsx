@@ -7,6 +7,7 @@ interface AuthContextType {
   token: string | null;
   login: (username: string, password: string) => Promise<boolean>;
   register: (username: string, password: string, rank?: string, clearance?: string) => Promise<boolean>;
+  quickGuestAccess: (agentName?: string) => void;
   logout: () => void;
   updateUserScore: (scoreToAdd: number, caseId?: string) => void;
   isLoading: boolean;
@@ -20,6 +21,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [token, setToken] = useState<string | null>(localStorage.getItem('cib_token'));
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  const createFallbackUser = (username: string, rank?: string, clearance?: string): UserProfile => {
+    const fallbackUser: UserProfile = {
+      id: 'agent-' + (username || 'operative').toLowerCase().replace(/\s+/g, '-'),
+      username: username || 'SpecterAgent',
+      badgeNumber: 'CIB-' + Math.floor(1000 + Math.random() * 9000),
+      rank: rank || 'Lead Investigator',
+      clearanceLevel: clearance || 'LEVEL-3 CONFIDENTIAL',
+      score: 150,
+      completedCaseIds: [],
+      token: 'offline-token-' + Date.now(),
+    };
+    localStorage.setItem('cib_token', fallbackUser.token!);
+    localStorage.setItem('cib_local_user', JSON.stringify(fallbackUser));
+    return fallbackUser;
+  };
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -71,35 +88,40 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         body: JSON.stringify({ username, password })
       });
 
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        setError(errorData.message || 'Access Denied: Invalid Agent Credentials');
+      if (res.ok) {
+        const data = await res.json();
+        localStorage.setItem('cib_token', data.token);
+        localStorage.setItem('cib_local_user', JSON.stringify(data));
+        setToken(data.token);
+        setUser(data);
         setIsLoading(false);
-        return false;
+        return true;
       }
 
-      const data = await res.json();
-      localStorage.setItem('cib_token', data.token);
-      setToken(data.token);
-      setUser(data);
+      // 404/405/5xx means backend is not deployed on this static host (Netlify deployment)
+      if (res.status === 404 || res.status === 405 || res.status >= 500) {
+        console.warn('Backend API not found on host (Netlify static mode). Authenticating locally.');
+        const localSaved = localStorage.getItem('cib_local_user');
+        const userObj: UserProfile = localSaved ? JSON.parse(localSaved) : createFallbackUser(username);
+        localStorage.setItem('cib_token', userObj.token || 'offline-token');
+        setToken(userObj.token || 'offline-token');
+        setUser(userObj);
+        setIsLoading(false);
+        return true;
+      }
+
+      // Real 401/403 credentials error from backend
+      const errorData = await res.json().catch(() => ({}));
+      setError(errorData.message || 'Access Denied: Invalid Agent Credentials');
       setIsLoading(false);
-      return true;
+      return false;
     } catch {
-      // Standalone Netlify Mode: Provide seamless local agent clearance
-      const fallbackUser: UserProfile = {
-        id: 'agent-' + (username || 'operative').toLowerCase().replace(/\s+/g, '-'),
-        username: username || 'SpecterAgent',
-        badgeNumber: 'CIB-' + Math.floor(1000 + Math.random() * 9000),
-        rank: 'Lead Investigator',
-        clearanceLevel: 'LEVEL-3 CONFIDENTIAL',
-        score: 150,
-        completedCaseIds: [],
-        token: 'offline-token-' + Date.now(),
-      };
-      localStorage.setItem('cib_token', fallbackUser.token!);
-      localStorage.setItem('cib_local_user', JSON.stringify(fallbackUser));
-      setToken(fallbackUser.token!);
-      setUser(fallbackUser);
+      // Offline / Network failure: seamless local agent clearance
+      const localSaved = localStorage.getItem('cib_local_user');
+      const userObj: UserProfile = localSaved ? JSON.parse(localSaved) : createFallbackUser(username);
+      localStorage.setItem('cib_token', userObj.token || 'offline-token');
+      setToken(userObj.token || 'offline-token');
+      setUser(userObj);
       setIsLoading(false);
       return true;
     }
@@ -115,38 +137,47 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         body: JSON.stringify({ username, password, rank, clearanceLevel: clearance })
       });
 
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        setError(errorData.error || 'Registration failed');
+      if (res.ok) {
+        const data = await res.json();
+        localStorage.setItem('cib_token', data.token);
+        localStorage.setItem('cib_local_user', JSON.stringify(data));
+        setToken(data.token);
+        setUser(data);
         setIsLoading(false);
-        return false;
+        return true;
       }
 
-      const data = await res.json();
-      localStorage.setItem('cib_token', data.token);
-      setToken(data.token);
-      setUser(data);
+      // 404/405/5xx means backend is not deployed on this static host (Netlify deployment)
+      if (res.status === 404 || res.status === 405 || res.status >= 500) {
+        console.warn('Backend API not found on host (Netlify static mode). Enrolling operative locally.');
+        const fallbackUser = createFallbackUser(username, rank, clearance);
+        setToken(fallbackUser.token!);
+        setUser(fallbackUser);
+        setIsLoading(false);
+        return true;
+      }
+
+      // Real 400/409 error from backend
+      const errorData = await res.json().catch(() => ({}));
+      setError(errorData.error || 'Registration failed');
       setIsLoading(false);
-      return true;
+      return false;
     } catch {
-      // Standalone Netlify Mode: Auto-enroll local operative
-      const fallbackUser: UserProfile = {
-        id: 'agent-' + (username || 'operative').toLowerCase().replace(/\s+/g, '-'),
-        username: username || 'SpecterAgent',
-        badgeNumber: 'CIB-' + Math.floor(1000 + Math.random() * 9000),
-        rank: rank || 'Lead Investigator',
-        clearanceLevel: clearance || 'LEVEL-3 CONFIDENTIAL',
-        score: 100,
-        completedCaseIds: [],
-        token: 'offline-token-' + Date.now(),
-      };
-      localStorage.setItem('cib_token', fallbackUser.token!);
-      localStorage.setItem('cib_local_user', JSON.stringify(fallbackUser));
+      // Offline / Network failure: auto-enroll local operative
+      const fallbackUser = createFallbackUser(username, rank, clearance);
       setToken(fallbackUser.token!);
       setUser(fallbackUser);
       setIsLoading(false);
       return true;
     }
+  };
+
+  const quickGuestAccess = (agentName?: string) => {
+    const fallbackUser = createFallbackUser(agentName || 'Agent ' + Math.floor(100 + Math.random() * 900));
+    setToken(fallbackUser.token!);
+    setUser(fallbackUser);
+    setError(null);
+    setIsLoading(false);
   };
 
   const logout = () => {
@@ -169,7 +200,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, updateUserScore, isLoading, error }}>
+    <AuthContext.Provider value={{ user, token, login, register, quickGuestAccess, logout, updateUserScore, isLoading, error }}>
       {children}
     </AuthContext.Provider>
   );
