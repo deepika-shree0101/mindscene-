@@ -97,4 +97,34 @@ public class AiDetectiveService {
                 .mood(mood)
                 .build();
     }
+
+    public AiChatResponse processInterrogation(AiChatRequest request) {
+        String suspectName = request.getFocusedSubject() != null ? request.getFocusedSubject().toUpperCase() : "UNKNOWN SUSPECT";
+        String userQuery = request.getUserMessage().toLowerCase().trim();
+        String aiResponse;
+        String mood = "DEFENSIVE";
+
+        if (userQuery.contains("alibi") || userQuery.contains("where were you")) {
+            aiResponse = suspectName + ": I already told the police, I was at home watching TV. You can't prove otherwise.";
+        } else if (userQuery.contains("blood") || userQuery.contains("weapon") || userQuery.contains("kill")) {
+            aiResponse = suspectName + ": Are you accusing me?! I've never seen that weapon in my life! I want my lawyer!";
+            mood = "HOSTILE";
+        } else if (userQuery.contains("money") || userQuery.contains("debt") || userQuery.contains("bank")) {
+            aiResponse = suspectName + ": Look, we all have financial troubles. That doesn't mean I'd resort to murder.";
+            mood = "NERVOUS";
+        } else if (request.getDiscoveredClueIds() != null && request.getDiscoveredClueIds().size() > 2) {
+            aiResponse = suspectName + ": Okay, okay... maybe I was near the scene. But I didn't do it! I swear!";
+            mood = "CRACKING";
+        } else {
+            aiResponse = suspectName + ": I have nothing to say to you. I don't answer to amateur detectives.";
+            mood = "DEFENSIVE";
+        }
+
+        return AiChatResponse.builder()
+                .response(aiResponse)
+                .suggestedQuestion("Press them on their alibi")
+                .unlockedClueHints(List.of())
+                .mood(mood)
+                .build();
+    }
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { CyberBackground } from './components/CyberBackground';
+import { ScaryVideoBackground } from './components/ScaryVideoBackground';
 import { HolographicTerminal } from './components/HolographicTerminal';
 import { CaseDashboard } from './components/CaseDashboard';
 import { CaseBriefingModal } from './components/CaseBriefingModal';
@@ -58,10 +58,10 @@ const InvestigationApp: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#06080d] text-slate-100 font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div className="relative min-h-screen bg-[#050000] text-red-100 font-sans selection:bg-red-900/50 selection:text-red-200">
       
-      {/* 3D Dynamic Particle Background */}
-      <CyberBackground />
+      {/* Dynamic Looping Scary Video Background */}
+      <ScaryVideoBackground variant={isInInvestigation ? 'scene' : 'menu'} />
 
       {/* Main Flow Router */}
       <div className="relative z-10">

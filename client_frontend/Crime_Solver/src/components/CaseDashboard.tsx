@@ -33,15 +33,15 @@ export const CaseDashboard: React.FC<CaseDashboardProps> = ({ cases, onSelectCas
     <div className="relative min-h-screen z-10 pb-16 bg-[#090c12] text-slate-100 select-none">
       
       {/* Top Detective Command Header */}
-      <header className="sticky top-0 z-30 bg-[#0f1420]/95 border-b border-amber-500/30 px-6 py-3.5 flex flex-wrap items-center justify-between gap-4 shadow-xl backdrop-blur-md">
+      <header className="sticky top-0 z-30 bg-[#0f1420]/95 border-b border-orange-500/30 px-6 py-3.5 flex flex-wrap items-center justify-between gap-4 shadow-xl backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-950/80 border border-amber-500/50 flex items-center justify-center text-amber-400 shadow-md">
+          <div className="w-10 h-10 rounded-xl bg-orange-950/80 border border-orange-500/50 flex items-center justify-center text-orange-400 shadow-md">
             <Shield className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-orbitron font-bold text-sm tracking-wider text-white">CIB DETECTIVE ARCHIVE</span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-400 text-slate-950 font-bold">
+              <span className="font-creepster font-bold text-sm tracking-wider text-white">CIB DETECTIVE ARCHIVE</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-orange-400 text-slate-950 font-bold">
                 FORENSIC SYSTEM
               </span>
             </div>
@@ -54,15 +54,15 @@ export const CaseDashboard: React.FC<CaseDashboardProps> = ({ cases, onSelectCas
           <div className="hidden sm:flex items-center gap-3.5 bg-[#131926] border border-slate-800 px-4 py-2 rounded-xl text-xs font-sans">
             <div className="flex items-center gap-1.5 text-slate-300">
               <span className="text-slate-400 font-mono text-[11px]">OPERATIVE:</span>
-              <span className="text-amber-400 font-bold">{user?.username || 'AGENT'}</span>
+              <span className="text-orange-400 font-bold">{user?.username || 'AGENT'}</span>
             </div>
             <div className="w-px h-4 bg-slate-800" />
-            <div className="flex items-center gap-1.5 text-amber-300 font-bold">
-              <Award className="w-4 h-4 text-amber-400" />
+            <div className="flex items-center gap-1.5 text-orange-300 font-bold">
+              <Award className="w-4 h-4 text-orange-400" />
               <span>{user?.score || 0} PTS</span>
             </div>
             <div className="w-px h-4 bg-slate-800" />
-            <div className="text-emerald-400 font-bold flex items-center gap-1">
+            <div className="text-rose-400 font-bold flex items-center gap-1">
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>SOLVED: {user?.completedCaseIds?.length || 0} / {cases.length}</span>
             </div>
@@ -74,9 +74,9 @@ export const CaseDashboard: React.FC<CaseDashboardProps> = ({ cases, onSelectCas
             <button
               onClick={handleAudioToggle}
               title={isMuted ? 'Unmute Audio' : 'Mute Audio'}
-              className="p-2.5 rounded-xl bg-slate-900 border border-slate-700 hover:border-amber-400 text-slate-300 hover:text-amber-300 transition-colors cursor-pointer"
+              className="p-2.5 rounded-xl bg-slate-900 border border-slate-700 hover:border-orange-400 text-slate-300 hover:text-orange-300 transition-colors cursor-pointer"
             >
-              {isMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4 text-amber-400" />}
+              {isMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4 text-orange-400" />}
             </button>
 
             <button
@@ -99,11 +99,11 @@ export const CaseDashboard: React.FC<CaseDashboardProps> = ({ cases, onSelectCas
         {/* Banner Section */}
         <div className="mb-10 text-center sm:text-left flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-slate-800/80 pb-6">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-950/60 border border-amber-500/40 text-amber-300 text-xs font-mono font-bold mb-2">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-950/60 border border-orange-500/40 text-orange-300 text-xs font-mono font-bold mb-2">
+              <Sparkles className="w-3.5 h-3.5 text-orange-400" />
               <span>ACTIVE COLD CASE INVESTIGATION UNIT</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-orbitron font-extrabold text-white tracking-wide">
+            <h1 className="text-3xl sm:text-4xl font-creepster font-extrabold text-white tracking-wide">
               SELECT AN INCIDENT FILE
             </h1>
             <p className="text-sm font-sans text-slate-300 mt-1 max-w-2xl leading-relaxed">
@@ -112,23 +112,23 @@ export const CaseDashboard: React.FC<CaseDashboardProps> = ({ cases, onSelectCas
           </div>
 
           <div className="font-mono text-xs text-slate-300 bg-[#131926] border border-slate-800 p-3 rounded-xl shrink-0 shadow-md">
-            <div>STATUS: <span className="text-emerald-400 font-bold">CLEARANCE VERIFIED</span></div>
-            <div>AVAILABLE DOSSIERS: <span className="text-amber-400 font-bold">{cases.length}</span></div>
+            <div>STATUS: <span className="text-rose-400 font-bold">CLEARANCE VERIFIED</span></div>
+            <div>AVAILABLE DOSSIERS: <span className="text-orange-400 font-bold">{cases.length}</span></div>
           </div>
         </div>
 
         {/* Cases Loading State */}
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <div className="w-12 h-12 rounded-full border-3 border-amber-400 border-t-transparent animate-spin" />
-            <span className="font-mono text-sm text-amber-300 tracking-widest animate-pulse font-bold">
+            <div className="w-12 h-12 rounded-full border-3 border-orange-400 border-t-transparent animate-spin" />
+            <span className="font-mono text-sm text-orange-300 tracking-widest animate-pulse font-bold">
               RETRIEVING FORENSIC CASE DOSSIERS...
             </span>
           </div>
         ) : cases.length === 0 ? (
-          <div className="bg-[#131926] p-12 rounded-2xl text-center max-w-md mx-auto border border-amber-500/30 shadow-2xl">
-            <AlertCircle className="w-12 h-12 text-amber-400 mx-auto mb-3" />
-            <h3 className="font-orbitron font-bold text-lg text-white">NO ACTIVE CASES IN QUEUE</h3>
+          <div className="bg-[#131926] p-12 rounded-2xl text-center max-w-md mx-auto border border-orange-500/30 shadow-2xl">
+            <AlertCircle className="w-12 h-12 text-orange-400 mx-auto mb-3" />
+            <h3 className="font-creepster font-bold text-lg text-white">NO ACTIVE CASES IN QUEUE</h3>
             <p className="font-sans text-xs text-slate-400 mt-2">
               All files are currently archived.
             </p>
@@ -145,8 +145,8 @@ export const CaseDashboard: React.FC<CaseDashboardProps> = ({ cases, onSelectCas
                   onClick={() => handleCaseClick(caseItem)}
                   className={`group relative bg-[#0f1420] rounded-2xl border-2 transition-all duration-300 overflow-hidden cursor-pointer hover:-translate-y-1.5 shadow-2xl ${
                     solved 
-                      ? 'border-emerald-500/50 hover:border-emerald-400 shadow-emerald-950/20' 
-                      : 'border-slate-800 hover:border-amber-400 shadow-amber-950/20'
+                      ? 'border-rose-500/50 hover:border-rose-400 shadow-rose-950/20' 
+                      : 'border-slate-800 hover:border-orange-400 shadow-orange-950/20'
                   }`}
                 >
                   {/* Top Graphic Banner */}
@@ -157,7 +157,7 @@ export const CaseDashboard: React.FC<CaseDashboardProps> = ({ cases, onSelectCas
                   }`}>
                     {/* Visual Stamp Ribbon */}
                     <div className="absolute top-4 left-4 z-10">
-                      <span className="font-mono text-xs font-black px-2.5 py-1 rounded bg-black/80 border border-slate-700 text-amber-300">
+                      <span className="font-mono text-xs font-black px-2.5 py-1 rounded bg-black/80 border border-slate-700 text-orange-300">
                         {caseItem.caseNumber}
                       </span>
                     </div>
@@ -165,8 +165,8 @@ export const CaseDashboard: React.FC<CaseDashboardProps> = ({ cases, onSelectCas
                     <div className="absolute top-4 right-4 z-10">
                       <span className={`font-mono text-xs px-3 py-1 rounded font-black uppercase tracking-wider border shadow-lg ${
                         solved 
-                          ? 'bg-emerald-950/90 border-emerald-400 text-emerald-300'
-                          : 'bg-amber-950/90 border-amber-400 text-amber-300'
+                          ? 'bg-rose-950/90 border-rose-400 text-rose-300'
+                          : 'bg-orange-950/90 border-orange-400 text-orange-300'
                       }`}>
                         {solved ? '✓ SOLVED 🔎' : 'CONFIDENTIAL // UNSOLVED'}
                       </span>
@@ -174,7 +174,7 @@ export const CaseDashboard: React.FC<CaseDashboardProps> = ({ cases, onSelectCas
 
                     {/* Central Icon */}
                     <div className="relative z-10 text-center transform group-hover:scale-105 transition-transform duration-300">
-                      <FolderLock className={`w-16 h-16 mx-auto mb-2 ${isCase1 ? 'text-cyan-400' : 'text-amber-400'}`} />
+                      <FolderLock className={`w-16 h-16 mx-auto mb-2 ${isCase1 ? 'text-red-400' : 'text-orange-400'}`} />
                       <span className="text-xs font-mono font-bold tracking-widest text-slate-300 uppercase">
                         {caseItem.crimeType}
                       </span>
@@ -186,20 +186,20 @@ export const CaseDashboard: React.FC<CaseDashboardProps> = ({ cases, onSelectCas
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
                         <span className={`text-xs font-mono font-bold uppercase ${
-                          caseItem.difficulty === 'MASTERMIND' ? 'text-red-400' : 'text-amber-400'
+                          caseItem.difficulty === 'MASTERMIND' ? 'text-red-400' : 'text-orange-400'
                         }`}>
                           DIFFICULTY: {caseItem.difficulty}
                         </span>
                         <span className="text-xs font-mono text-slate-400 flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                          <Clock className="w-3.5 h-3.5 text-red-400" />
                           {caseItem.estimatedTime}
                         </span>
                       </div>
 
-                      <h2 className="text-xl font-orbitron font-bold text-white group-hover:text-amber-300 transition-colors">
+                      <h2 className="text-xl font-creepster font-bold text-white group-hover:text-orange-300 transition-colors">
                         {caseItem.title}
                       </h2>
-                      <p className="text-xs font-sans text-amber-200/80 mt-1 italic">
+                      <p className="text-xs font-sans text-orange-200/80 mt-1 italic">
                         "{caseItem.subtitle}"
                       </p>
                     </div>
@@ -211,11 +211,11 @@ export const CaseDashboard: React.FC<CaseDashboardProps> = ({ cases, onSelectCas
                     {/* Location & Time Metadata */}
                     <div className="grid grid-cols-2 gap-2 text-xs font-sans text-slate-300 bg-[#131926] p-3 rounded-xl border border-slate-800">
                       <div className="flex items-center gap-1.5 truncate">
-                        <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                        <MapPin className="w-3.5 h-3.5 text-orange-400 shrink-0" />
                         <span className="truncate text-slate-200 font-medium">{caseItem.location}</span>
                       </div>
                       <div className="flex items-center gap-1.5 text-slate-400 font-mono text-[11px]">
-                        <Clock className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                        <Clock className="w-3.5 h-3.5 text-red-400 shrink-0" />
                         <span className="truncate">{caseItem.timeOfCrime}</span>
                       </div>
                     </div>
@@ -223,10 +223,10 @@ export const CaseDashboard: React.FC<CaseDashboardProps> = ({ cases, onSelectCas
                     {/* Action Button */}
                     <button
                       type="button"
-                      className={`w-full py-3 px-4 rounded-xl font-orbitron font-bold text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg ${
+                      className={`w-full py-3 px-4 rounded-xl font-creepster font-bold text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg ${
                         solved
-                          ? 'bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-500'
-                          : 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20'
+                          ? 'bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-500'
+                          : 'bg-orange-500 hover:bg-orange-400 text-slate-950 shadow-orange-500/20'
                       }`}
                     >
                       <Shield className="w-4 h-4" />

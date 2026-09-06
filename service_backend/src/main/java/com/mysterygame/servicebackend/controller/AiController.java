@@ -18,4 +18,9 @@ public class AiController {
     public ResponseEntity<AiChatResponse> consultAi(@RequestBody AiChatRequest request) {
         return ResponseEntity.ok(aiDetectiveService.processDetectiveConsultation(request));
     }
+
+    @PostMapping("/interrogate")
+    public ResponseEntity<AiChatResponse> interrogateSuspect(@RequestBody AiChatRequest request) {
+        return ResponseEntity.ok(aiDetectiveService.processInterrogation(request));
+    }
 }

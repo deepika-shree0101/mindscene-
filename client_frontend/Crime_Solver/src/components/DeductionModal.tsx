@@ -91,17 +91,17 @@ export const DeductionModal: React.FC<DeductionModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md overflow-y-auto select-none animate-in fade-in duration-200">
-      <div className="relative w-full max-w-3xl bg-[#0d121c] border-2 border-amber-500/50 rounded-2xl shadow-2xl p-6 sm:p-8 my-8 text-left max-h-[90vh] overflow-y-auto">
+      <div className="relative w-full max-w-3xl bg-[#0d121c] border-2 border-orange-500/50 rounded-2xl shadow-2xl p-6 sm:p-8 my-8 text-left max-h-[90vh] overflow-y-auto">
         
         {!result ? (
           <>
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
               <div>
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-400 text-slate-950">
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-orange-400 text-slate-950">
                   FINAL VERDICT PHASE
                 </span>
-                <h1 className="text-2xl font-orbitron font-extrabold text-white mt-1">
+                <h1 className="text-2xl font-creepster font-extrabold text-white mt-1">
                   DELIVER CASE ACCUSATION
                 </h1>
               </div>
@@ -111,7 +111,7 @@ export const DeductionModal: React.FC<DeductionModalProps> = ({
                   sound.playKeyClick();
                   onClose();
                 }}
-                className="p-2 rounded-lg bg-slate-900 border border-slate-700 hover:border-amber-400 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                className="p-2 rounded-lg bg-slate-900 border border-slate-700 hover:border-orange-400 text-slate-300 hover:text-white transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -121,7 +121,7 @@ export const DeductionModal: React.FC<DeductionModalProps> = ({
               
               {/* Question 1: Who is the Culprit? */}
               <div>
-                <label className="block text-xs font-mono text-amber-400 uppercase tracking-wider mb-2 font-bold">
+                <label className="block text-xs font-mono text-orange-400 uppercase tracking-wider mb-2 font-bold">
                   1. WHO IS THE PERPETRATOR RESPONSIBLE?
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -136,17 +136,17 @@ export const DeductionModal: React.FC<DeductionModalProps> = ({
                         }}
                         className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
                           isSelected
-                            ? 'bg-[#182133] border-amber-400 ring-2 ring-amber-400/50 shadow-xl'
+                            ? 'bg-[#182133] border-orange-400 ring-2 ring-orange-400/50 shadow-xl'
                             : 'bg-[#131926] border-slate-800 hover:border-slate-700'
                         }`}
                       >
                         <div className="flex items-center gap-2.5 mb-2">
-                          <div className="w-9 h-9 rounded-full bg-amber-950 border border-amber-500 flex items-center justify-center text-amber-300 font-bold font-mono text-xs">
+                          <div className="w-9 h-9 rounded-full bg-orange-950 border border-orange-500 flex items-center justify-center text-orange-300 font-bold font-mono text-xs">
                             {suspect.name.charAt(0)}
                           </div>
                           <div>
                             <h4 className="text-xs font-sans font-bold text-white">{suspect.name}</h4>
-                            <span className="text-[10px] font-mono text-amber-400">{suspect.role}</span>
+                            <span className="text-[10px] font-mono text-orange-400">{suspect.role}</span>
                           </div>
                         </div>
                         <span className="text-xs font-sans text-slate-300 line-clamp-2 italic leading-snug">
@@ -160,26 +160,26 @@ export const DeductionModal: React.FC<DeductionModalProps> = ({
 
               {/* Question 2: Motive */}
               <div>
-                <label className="block text-xs font-mono text-amber-400 uppercase tracking-wider mb-2 font-bold">
+                <label className="block text-xs font-mono text-orange-400 uppercase tracking-wider mb-2 font-bold">
                   2. WHAT WAS THEIR MOTIVE & HOW WAS IT EXECUTED?
                 </label>
                 <textarea
                   value={motiveText}
                   onChange={(e) => setMotiveText(e.target.value)}
                   placeholder="Explain why and how they committed the crime (e.g. laced the wine, staged the balcony break-in)..."
-                  className="w-full bg-[#090c14] border border-slate-700 focus:border-amber-400 text-slate-100 font-sans text-xs p-3.5 rounded-xl outline-none h-24 leading-relaxed"
+                  className="w-full bg-[#090c14] border border-slate-700 focus:border-orange-400 text-slate-100 font-sans text-xs p-3.5 rounded-xl outline-none h-24 leading-relaxed"
                 />
               </div>
 
               {/* Question 3: Supporting Evidence */}
               <div>
-                <label className="block text-xs font-mono text-amber-400 uppercase tracking-wider mb-2 font-bold flex items-center justify-between">
+                <label className="block text-xs font-mono text-orange-400 uppercase tracking-wider mb-2 font-bold flex items-center justify-between">
                   <span>3. ATTACH RELEVANT SUPPORTING EVIDENCE ({selectedEvidenceIds.length} SELECTED)</span>
                   <span className="text-slate-400 text-[10px]">{discoveredClues.length} available</span>
                 </label>
 
                 {discoveredClues.length === 0 ? (
-                  <p className="text-xs font-sans text-amber-300 bg-amber-950/40 p-3.5 rounded-xl border border-amber-800/80">
+                  <p className="text-xs font-sans text-orange-300 bg-orange-950/40 p-3.5 rounded-xl border border-orange-800/80">
                     ⚠️ Warning: You haven't gathered any clues yet. Return to the crime scenes and scan for evidence first.
                   </p>
                 ) : (
@@ -192,18 +192,18 @@ export const DeductionModal: React.FC<DeductionModalProps> = ({
                           onClick={() => toggleEvidence(clue.id)}
                           className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
                             isChecked
-                              ? 'bg-amber-950/60 border-amber-400 text-amber-200'
+                              ? 'bg-orange-950/60 border-orange-400 text-orange-200'
                               : 'bg-[#131926] border-slate-800 text-slate-300 hover:border-slate-700'
                           }`}
                         >
                           <div className="flex items-center gap-2 truncate">
-                            <span className="bg-amber-400 text-slate-950 font-mono text-[9px] font-black px-1.5 py-0.5 rounded shrink-0">
+                            <span className="bg-orange-400 text-slate-950 font-mono text-[9px] font-black px-1.5 py-0.5 rounded shrink-0">
                               #0{idx + 1}
                             </span>
                             <span className="text-xs font-sans font-medium text-slate-100 truncate">{clue.title}</span>
                           </div>
                           <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ml-2 ${
-                            isChecked ? 'bg-amber-500 border-amber-400 text-slate-950' : 'border-slate-700'
+                            isChecked ? 'bg-orange-500 border-orange-400 text-slate-950' : 'border-slate-700'
                           }`}>
                             {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
                           </div>
@@ -217,14 +217,14 @@ export const DeductionModal: React.FC<DeductionModalProps> = ({
               {/* Submit Action */}
               <div className="flex items-center justify-between pt-4 border-t border-slate-800">
                 <div className="text-xs font-mono text-slate-300 flex items-center gap-1.5">
-                  <Clock className="w-4 h-4 text-cyan-400" />
+                  <Clock className="w-4 h-4 text-red-400" />
                   <span>TIME LOGGED: <strong className="text-white">{formatTime(timeTakenSeconds)}</strong></span>
                 </div>
 
                 <button
                   type="submit"
                   disabled={!selectedCulpritId || isSubmitting}
-                  className="px-7 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-orbitron font-bold text-xs tracking-wider shadow-lg hover:shadow-amber-500/30 flex items-center gap-2 cursor-pointer transition-all"
+                  className="px-7 py-3 rounded-xl bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-slate-950 font-creepster font-bold text-xs tracking-wider shadow-lg hover:shadow-orange-500/30 flex items-center gap-2 cursor-pointer transition-all"
                 >
                   <FileCheck className="w-4 h-4 stroke-[2.5]" />
                   <span>{isSubmitting ? 'EVALUATING CASE LOGIC...' : 'DELIVER ACCUSATION 🔎'}</span>
@@ -239,16 +239,16 @@ export const DeductionModal: React.FC<DeductionModalProps> = ({
             
             <div className={`p-6 sm:p-8 rounded-2xl border-2 ${
               result.isCorrect
-                ? 'bg-emerald-950/80 border-emerald-500 shadow-2xl'
+                ? 'bg-rose-950/80 border-rose-500 shadow-2xl'
                 : 'bg-red-950/80 border-red-500 shadow-2xl'
             }`}>
               {result.isCorrect ? (
-                <ShieldCheck className="w-16 h-16 text-emerald-400 mx-auto mb-2 animate-bounce" />
+                <ShieldCheck className="w-16 h-16 text-rose-400 mx-auto mb-2 animate-bounce" />
               ) : (
                 <ShieldAlert className="w-16 h-16 text-red-400 mx-auto mb-2" />
               )}
               
-              <h1 className="text-3xl font-orbitron font-black text-white">
+              <h1 className="text-3xl font-creepster font-black text-white">
                 {result.title}
               </h1>
 
@@ -257,15 +257,15 @@ export const DeductionModal: React.FC<DeductionModalProps> = ({
               </p>
 
               <div className="flex flex-wrap items-center justify-center gap-6 mt-5 pt-4 border-t border-slate-800/80 font-mono text-xs">
-                <div className="text-amber-400 flex items-center gap-1.5">
+                <div className="text-orange-400 flex items-center gap-1.5">
                   <Award className="w-4 h-4" />
                   <span>SCORE: <strong className="text-white font-bold">{result.score} PTS</strong></span>
                 </div>
-                <div className="text-cyan-400 flex items-center gap-1.5">
+                <div className="text-red-400 flex items-center gap-1.5">
                   <Clock className="w-4 h-4" />
                   <span>TIME: <strong className="text-white font-bold">{formatTime(result.timeTakenSeconds)}</strong></span>
                 </div>
-                <div className="text-emerald-300">
+                <div className="text-rose-300">
                   RANK BADGE: <strong className="text-white font-bold">{result.badgeAwarded}</strong>
                 </div>
               </div>
@@ -273,7 +273,7 @@ export const DeductionModal: React.FC<DeductionModalProps> = ({
 
             {/* True Case Resolution Narrative */}
             <div className="bg-[#131926] border border-slate-800 rounded-xl p-5 text-left font-sans text-xs space-y-3 shadow-lg">
-              <div className="text-amber-400 font-mono font-bold uppercase border-b border-slate-800 pb-2 text-xs">
+              <div className="text-orange-400 font-mono font-bold uppercase border-b border-slate-800 pb-2 text-xs">
                 CLASSIFIED CASE RESOLUTION DOSSIER
               </div>
               
@@ -295,12 +295,12 @@ export const DeductionModal: React.FC<DeductionModalProps> = ({
 
             {/* Crucial Clues Breakdown */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left font-sans text-xs">
-              <div className="bg-emerald-950/40 border border-emerald-800 p-3.5 rounded-xl">
-                <span className="text-emerald-400 font-mono font-bold block mb-1">CRUCIAL EVIDENCE FOUND:</span>
+              <div className="bg-rose-950/40 border border-rose-800 p-3.5 rounded-xl">
+                <span className="text-rose-400 font-mono font-bold block mb-1">CRUCIAL EVIDENCE FOUND:</span>
                 <span className="text-slate-200 text-sm font-semibold">{result.crucialCluesFound.length} key clues attached</span>
               </div>
-              <div className="bg-amber-950/40 border border-amber-800 p-3.5 rounded-xl">
-                <span className="text-amber-400 font-mono font-bold block mb-1">CRUCIAL EVIDENCE OVERLOOKED:</span>
+              <div className="bg-orange-950/40 border border-orange-800 p-3.5 rounded-xl">
+                <span className="text-orange-400 font-mono font-bold block mb-1">CRUCIAL EVIDENCE OVERLOOKED:</span>
                 <span className="text-slate-200 text-sm font-semibold">{result.crucialCluesMissed.length} key clues missed</span>
               </div>
             </div>
@@ -310,7 +310,7 @@ export const DeductionModal: React.FC<DeductionModalProps> = ({
               {!result.isCorrect && (
                 <button
                   onClick={() => setResult(null)}
-                  className="w-full sm:w-auto px-6 py-3 rounded-xl border border-slate-700 hover:border-amber-400 text-slate-200 font-sans font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                  className="w-full sm:w-auto px-6 py-3 rounded-xl border border-slate-700 hover:border-orange-400 text-slate-200 font-sans font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors"
                 >
                   <RotateCcw className="w-4 h-4" />
                   <span>RE-EXAMINE CRIME SCENE</span>
@@ -319,7 +319,7 @@ export const DeductionModal: React.FC<DeductionModalProps> = ({
 
               <button
                 onClick={onReturnToDashboard}
-                className="w-full sm:w-auto px-7 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-orbitron font-bold text-xs tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-all shadow-lg"
+                className="w-full sm:w-auto px-7 py-3 rounded-xl bg-orange-500 hover:bg-orange-400 text-slate-950 font-creepster font-bold text-xs tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-all shadow-lg"
               >
                 <span>RETURN TO CASE ARCHIVE</span>
                 <ArrowRight className="w-4 h-4 stroke-[3]" />
