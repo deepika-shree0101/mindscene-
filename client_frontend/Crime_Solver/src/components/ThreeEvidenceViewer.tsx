@@ -26,15 +26,15 @@ export const ThreeEvidenceViewer: React.FC<ThreeEvidenceViewerProps> = ({ clue, 
   useEffect(() => {
     if (!containerRef.current) return;
     const container = containerRef.current;
-    const width = container.clientWidth;
-    const height = container.clientHeight;
+    const width = container.clientWidth || 420;
+    const height = container.clientHeight || 280;
 
     // 1. Scene
     const scene = new THREE.Scene();
     sceneRef.current = scene;
 
     // 2. Camera
-    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+    const camera = new THREE.PerspectiveCamera(45, width / (height || 1), 0.1, 100);
     camera.position.set(0, 0, 7);
     cameraRef.current = camera;
 
@@ -188,7 +188,21 @@ export const ThreeEvidenceViewer: React.FC<ThreeEvidenceViewerProps> = ({ clue, 
 
     animate();
 
+    const handleResize = () => {
+      if (!containerRef.current || !renderer || !camera) return;
+      const w = containerRef.current.clientWidth || 420;
+      const h = containerRef.current.clientHeight || 280;
+      camera.aspect = w / (h || 1);
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    };
+
+    window.addEventListener('resize', handleResize);
+    const resizeTimer = setTimeout(handleResize, 150);
+
     return () => {
+      clearTimeout(resizeTimer);
+      window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animId);
       renderer.dispose();
       scene.clear();

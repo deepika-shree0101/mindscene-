@@ -23,62 +23,63 @@ const generate360Panorama = (visualTheme: string, isUv: boolean): THREE.CanvasTe
   const w = canvas.width;
   const h = canvas.height;
 
-  // 1. Base Wall & Ambient Palette
+  // 1. Base Wall & Ambient Palette (Rich, vibrant tones - NEVER pure black)
   if (isUv) {
     // UV Forensic Ultraviolet Mode
     const grad = ctx.createLinearGradient(0, 0, 0, h);
-    grad.addColorStop(0, '#0f051d');
-    grad.addColorStop(0.5, '#1e0b36');
-    grad.addColorStop(0.7, '#120424');
-    grad.addColorStop(1, '#080112');
+    grad.addColorStop(0, '#1e0b36');
+    grad.addColorStop(0.4, '#2e1065');
+    grad.addColorStop(0.65, '#3b0764');
+    grad.addColorStop(1, '#1e0838');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
   } else if (visualTheme.includes('balcony')) {
     // Stormy Balcony / Rain Cliff
     const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
-    skyGrad.addColorStop(0, '#050c1a');
-    skyGrad.addColorStop(0.4, '#0f172a');
-    skyGrad.addColorStop(0.7, '#1e293b');
-    skyGrad.addColorStop(1, '#090d16');
+    skyGrad.addColorStop(0, '#0a192f');
+    skyGrad.addColorStop(0.4, '#172554');
+    skyGrad.addColorStop(0.7, '#1e3a8a');
+    skyGrad.addColorStop(1, '#0f172a');
     ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, w, h);
   } else {
     // Victorian Manor Study / Detective Office
     const roomGrad = ctx.createLinearGradient(0, 0, 0, h);
-    roomGrad.addColorStop(0, '#1c0a0a');
-    roomGrad.addColorStop(0.3, '#2d1111');
-    roomGrad.addColorStop(0.65, '#3b1818');
-    roomGrad.addColorStop(0.7, '#1a0909');
-    roomGrad.addColorStop(1, '#0e0404');
+    roomGrad.addColorStop(0, '#381212');
+    roomGrad.addColorStop(0.3, '#4f1a1a');
+    roomGrad.addColorStop(0.65, '#5c1d1d');
+    roomGrad.addColorStop(0.7, '#3b1212');
+    roomGrad.addColorStop(1, '#2a0c0c');
     ctx.fillStyle = roomGrad;
     ctx.fillRect(0, 0, w, h);
   }
 
-  // 2. Hardwood / Stone Floor with Perspective Planks
-  const floorTop = h * 0.65;
+  // 2. Hardwood Parquet Floor with Warm Mahogany Planks
+  const floorTop = h * 0.62;
   const floorGrad = ctx.createLinearGradient(0, floorTop, 0, h);
-  floorGrad.addColorStop(0, isUv ? '#130421' : '#220b0b');
-  floorGrad.addColorStop(1, isUv ? '#07010e' : '#110303');
+  floorGrad.addColorStop(0, isUv ? '#2a0845' : '#5c1d1d');
+  floorGrad.addColorStop(0.4, isUv ? '#1e0638' : '#4a1515');
+  floorGrad.addColorStop(1, isUv ? '#260640' : '#381010');
   ctx.fillStyle = floorGrad;
   ctx.fillRect(0, floorTop, w, h - floorTop);
 
-  // Floor Planks / Tiles
-  ctx.strokeStyle = isUv ? 'rgba(168, 85, 247, 0.15)' : 'rgba(185, 28, 28, 0.2)';
-  ctx.lineWidth = 2;
-  for (let x = 0; x < w; x += 120) {
+  // Perspective Wood Floor Planks
+  ctx.strokeStyle = isUv ? 'rgba(192, 132, 252, 0.35)' : 'rgba(248, 113, 113, 0.35)';
+  ctx.lineWidth = 3;
+  for (let x = 0; x < w; x += 100) {
     ctx.beginPath();
     ctx.moveTo(x, floorTop);
-    ctx.lineTo(x + (x - w / 2) * 0.8, h);
+    ctx.lineTo(x + (x - w / 2) * 0.9, h);
     ctx.stroke();
   }
 
-  // 3. Ornate Gothic Wall Panels & Wainscoting
-  ctx.fillStyle = isUv ? 'rgba(88, 28, 135, 0.25)' : 'rgba(69, 10, 10, 0.4)';
-  for (let x = 40; x < w; x += 220) {
-    ctx.fillRect(x, h * 0.35, 180, h * 0.28);
-    ctx.strokeStyle = isUv ? 'rgba(192, 132, 252, 0.3)' : 'rgba(239, 68, 68, 0.25)';
+  // 3. Ornate Gothic Wall Panels & Bookshelves
+  ctx.fillStyle = isUv ? 'rgba(126, 34, 206, 0.35)' : 'rgba(127, 29, 29, 0.45)';
+  for (let x = 30; x < w; x += 200) {
+    ctx.fillRect(x, h * 0.32, 160, h * 0.28);
+    ctx.strokeStyle = isUv ? 'rgba(216, 180, 254, 0.4)' : 'rgba(252, 165, 165, 0.4)';
     ctx.lineWidth = 3;
-    ctx.strokeRect(x, h * 0.35, 180, h * 0.28);
+    ctx.strokeRect(x, h * 0.32, 160, h * 0.28);
   }
 
   // 4. Large Gothic Arched Windows (Cold Blue Moonlight & Rain)
@@ -86,92 +87,138 @@ const generate360Panorama = (visualTheme: string, isUv: boolean): THREE.CanvasTe
   windowCenters.forEach((cx) => {
     ctx.save();
     ctx.beginPath();
-    ctx.arc(cx, h * 0.3, 110, Math.PI, 0, false);
-    ctx.rect(cx - 110, h * 0.3, 220, 180);
-    ctx.fillStyle = isUv ? '#1e1b4b' : '#0f2b48';
+    ctx.arc(cx, h * 0.28, 110, Math.PI, 0, false);
+    ctx.rect(cx - 110, h * 0.28, 220, 190);
+    ctx.fillStyle = isUv ? '#2e1065' : '#1e3a8a';
     ctx.fill();
 
     // Window Glass Moonlight Glow
-    const moonGlow = ctx.createRadialGradient(cx, h * 0.35, 10, cx, h * 0.35, 140);
-    moonGlow.addColorStop(0, isUv ? 'rgba(192, 132, 252, 0.6)' : 'rgba(147, 197, 253, 0.55)');
-    moonGlow.addColorStop(1, 'rgba(15, 23, 42, 0)');
+    const moonGlow = ctx.createRadialGradient(cx, h * 0.33, 10, cx, h * 0.33, 150);
+    moonGlow.addColorStop(0, isUv ? 'rgba(216, 180, 254, 0.85)' : 'rgba(191, 219, 254, 0.85)');
+    moonGlow.addColorStop(0.7, isUv ? 'rgba(147, 51, 234, 0.3)' : 'rgba(59, 130, 246, 0.25)');
+    moonGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = moonGlow;
     ctx.fill();
 
-    // Window Grids & Rain Streaks
-    ctx.strokeStyle = isUv ? '#312e81' : '#1e3a5f';
-    ctx.lineWidth = 4;
+    // Window Grids
+    ctx.strokeStyle = isUv ? '#4c1d95' : '#172554';
+    ctx.lineWidth = 5;
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(cx, h * 0.19);
-    ctx.lineTo(cx, h * 0.48);
-    ctx.moveTo(cx - 110, h * 0.34);
-    ctx.lineTo(cx + 110, h * 0.34);
+    ctx.moveTo(cx, h * 0.17);
+    ctx.lineTo(cx, h * 0.47);
+    ctx.moveTo(cx - 110, h * 0.32);
+    ctx.lineTo(cx + 110, h * 0.32);
     ctx.stroke();
     ctx.restore();
   });
 
-  // 5. Grand Study Desk & Bookshelf Centerpiece (Center Vision)
-  const deskX = w * 0.5 - 280;
-  const deskY = h * 0.58;
-  // Desk Body
-  ctx.fillStyle = isUv ? '#1e0d36' : '#3f1212';
-  ctx.fillRect(deskX, deskY, 560, 110);
-  ctx.strokeStyle = isUv ? '#a855f7' : '#991b1b';
-  ctx.lineWidth = 3;
-  ctx.strokeRect(deskX, deskY, 560, 110);
+  // 5. Crimson & Gold Victorian Persian Rug Under the Desk Area
+  const deskX = w * 0.5 - 320;
+  const deskY = h * 0.54;
+  const rugX = deskX - 100;
+  const rugY = floorTop + 20;
 
-  // Desk Desk-Mat & Spilled Wine / Evidence Area
-  ctx.fillStyle = isUv ? '#2e1065' : '#581c1c';
-  ctx.fillRect(deskX + 120, deskY + 10, 320, 75);
+  ctx.fillStyle = isUv ? '#3b0764' : '#831843';
+  ctx.fillRect(rugX, rugY, 840, 260);
+  ctx.strokeStyle = isUv ? '#c084fc' : '#f59e0b';
+  ctx.lineWidth = 8;
+  ctx.strokeRect(rugX, rugY, 840, 260);
 
-  // 6. Warm Fireplace / Ambient Hearth (Left wall)
-  const fireX = w * 0.05;
-  const fireY = h * 0.45;
-  ctx.fillStyle = '#1c1917';
-  ctx.fillRect(fireX, fireY, 180, 160);
-  const fireGlow = ctx.createRadialGradient(fireX + 90, fireY + 120, 10, fireX + 90, fireY + 120, 100);
-  fireGlow.addColorStop(0, isUv ? 'rgba(168, 85, 247, 0.8)' : 'rgba(249, 115, 22, 0.85)');
-  fireGlow.addColorStop(0.5, isUv ? 'rgba(126, 34, 206, 0.4)' : 'rgba(234, 88, 12, 0.4)');
+  // Decorative inner rug border
+  ctx.strokeStyle = isUv ? '#a855f7' : '#fbbf24';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(rugX + 16, rugY + 16, 808, 228);
+
+  // 6. Grand Mahogany Study Desk
+  ctx.fillStyle = isUv ? '#240638' : '#7f1d1d';
+  ctx.fillRect(deskX, deskY, 640, 130);
+  ctx.strokeStyle = isUv ? '#c084fc' : '#dc2626';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(deskX, deskY, 640, 130);
+
+  // Desk Mat (Green Velvet / UV Purple)
+  ctx.fillStyle = isUv ? '#3b0764' : '#14532d';
+  ctx.fillRect(deskX + 100, deskY + 15, 440, 95);
+  ctx.strokeStyle = isUv ? '#a855f7' : '#16a34a';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(deskX + 100, deskY + 15, 440, 95);
+
+  // Glowing Banker's Brass Lamp Glow
+  const lampX = deskX + 80;
+  const lampY = deskY + 20;
+  const lampGlow = ctx.createRadialGradient(lampX, lampY, 5, lampX, lampY, 140);
+  lampGlow.addColorStop(0, 'rgba(254, 240, 138, 0.95)');
+  lampGlow.addColorStop(0.4, 'rgba(245, 158, 11, 0.45)');
+  lampGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = lampGlow;
+  ctx.beginPath();
+  ctx.arc(lampX, lampY, 140, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 7. Fireplace Hearth Glow (Left Wall)
+  const fireX = w * 0.04;
+  const fireY = h * 0.42;
+  ctx.fillStyle = '#292524';
+  ctx.fillRect(fireX, fireY, 200, 180);
+  const fireGlow = ctx.createRadialGradient(fireX + 100, fireY + 130, 10, fireX + 100, fireY + 130, 130);
+  fireGlow.addColorStop(0, isUv ? 'rgba(192, 132, 252, 0.9)' : 'rgba(249, 115, 22, 0.95)');
+  fireGlow.addColorStop(0.5, isUv ? 'rgba(147, 51, 234, 0.5)' : 'rgba(234, 88, 12, 0.5)');
   fireGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = fireGlow;
-  ctx.fillRect(fireX, fireY, 180, 160);
+  ctx.fillRect(fireX, fireY, 200, 180);
 
-  // 7. Police Caution Tape Stripes
+  // 8. Forensic Evidence Placards (Yellow Placards #1, #2, #3 on Desk & Rug)
+  const placards = [
+    { x: deskX + 150, y: deskY + 45, num: '01' },
+    { x: deskX + 320, y: deskY + 55, num: '02' },
+    { x: rugX + 220, y: rugY + 120, num: '03' },
+  ];
+  placards.forEach((p) => {
+    ctx.fillStyle = '#facc15';
+    ctx.fillRect(p.x, p.y, 28, 22);
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(p.x, p.y, 28, 22);
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 12px monospace';
+    ctx.fillText(p.num, p.x + 6, p.y + 16);
+  });
+
+  // 9. Police Caution Tape
   ctx.save();
-  ctx.translate(deskX - 50, deskY + 120);
-  ctx.rotate(-0.06);
-  ctx.fillStyle = isUv ? 'rgba(168, 85, 247, 0.9)' : '#eab308';
-  ctx.fillRect(0, 0, 680, 22);
+  ctx.translate(deskX - 70, deskY + 145);
+  ctx.rotate(-0.04);
+  ctx.fillStyle = isUv ? '#a855f7' : '#eab308';
+  ctx.fillRect(0, 0, 780, 24);
   ctx.fillStyle = '#000000';
-  ctx.font = 'bold 12px monospace';
-  ctx.fillText('CRIME SCENE // DO NOT CROSS // FORENSIC EVIDENCE // CIB UNIT 09', 20, 16);
+  ctx.font = 'bold 13px monospace';
+  ctx.fillText('CRIME SCENE // DO NOT CROSS // FORENSIC EVIDENCE // CIB UNIT 09', 24, 17);
   ctx.restore();
 
-  // 8. UV Mode Special Hidden Forensic Revelations
+  // 10. UV Mode Special Glowing Revelations
   if (isUv) {
-    // Fluorescent glowing latent fingerprints & footprints
-    ctx.fillStyle = '#c084fc';
-    ctx.shadowColor = '#a855f7';
-    ctx.shadowBlur = 15;
+    ctx.fillStyle = '#f0abfc';
+    ctx.shadowColor = '#d946ef';
+    ctx.shadowBlur = 18;
 
-    // Glowing footprints on the floor
-    for (let i = 0; i < 6; i++) {
+    // Glowing footprints trail leading across the Persian rug
+    for (let i = 0; i < 7; i++) {
       ctx.beginPath();
-      ctx.ellipse(deskX + 60 + i * 70, floorTop + 60 + i * 35, 14, 24, 0.4, 0, Math.PI * 2);
+      ctx.ellipse(rugX + 80 + i * 85, rugY + 50 + i * 25, 16, 26, 0.35, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // Glowing latent chemical splatter near the desk
-    for (let j = 0; j < 12; j++) {
+    // Glowing latent chemical splatter on desk pad
+    for (let j = 0; j < 15; j++) {
       ctx.beginPath();
-      ctx.arc(deskX + 220 + (j * 17) % 120, deskY + 40 + (j * 23) % 40, 4 + (j % 5), 0, Math.PI * 2);
+      ctx.arc(deskX + 240 + (j * 19) % 150, deskY + 35 + (j * 23) % 55, 5 + (j % 5), 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // Hidden secret symbols on wall
+    // Hidden handwritten secret clue on desk
     ctx.font = 'bold 18px monospace';
-    ctx.fillText('⚠ DOSE 2.5mg — DR. V.', deskX + 160, deskY - 30);
+    ctx.fillText('⚠ DOSE 2.5mg — DR. V. (TOXIC PARALYSIS)', deskX + 130, deskY - 15);
     ctx.shadowBlur = 0;
   }
 
@@ -508,8 +555,8 @@ export const ThreeSceneRoom: React.FC<ThreeSceneRoomProps> = ({
           isUvMode
             ? 'bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.12)_0%,rgba(59,7,100,0.4)_55%,rgba(15,5,29,0.85)_100%)]'
             : isNightVisionOn
-            ? 'bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.03)_0%,rgba(0,0,0,0.15)_60%,rgba(0,0,0,0.45)_100%)]'
-            : 'bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.08)_0%,rgba(0,0,0,0.35)_45%,rgba(0,0,0,0.85)_100%)] mix-blend-multiply'
+            ? 'bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.05)_0%,rgba(0,0,0,0.1)_60%,rgba(0,0,0,0.3)_100%)]'
+            : 'bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.06)_0%,rgba(0,0,0,0.15)_50%,rgba(0,0,0,0.45)_100%)]'
         }`}
       />
 
