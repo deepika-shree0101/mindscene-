@@ -86,7 +86,7 @@ export const ThreeSceneRoom: React.FC<ThreeSceneRoomProps> = ({
     camera.add(cameraPointLight);
     pointLightRef.current = cameraPointLight;
 
-    // 3D Volumetric Spotlight (Investigator's Flashlight)
+    // 3D Volumetric Spotlight (Investigator's Flashlight attached to camera)
     const spotLight = new THREE.SpotLight(0xffffff, 6.0);
     spotLight.position.set(0, 0, 0);
     spotLight.angle = Math.PI / 4.5;
@@ -94,11 +94,12 @@ export const ThreeSceneRoom: React.FC<ThreeSceneRoomProps> = ({
     spotLight.decay = 1.2;
     spotLight.distance = 50;
     spotLight.castShadow = true;
-    scene.add(spotLight);
+    camera.add(spotLight);
     spotLightRef.current = spotLight;
 
     const lightTarget = new THREE.Object3D();
-    scene.add(lightTarget);
+    lightTarget.position.set(0, 0, -10);
+    camera.add(lightTarget);
     spotLight.target = lightTarget;
 
     // E. Build 3D Room Box
@@ -197,17 +198,13 @@ export const ThreeSceneRoom: React.FC<ThreeSceneRoomProps> = ({
       // Smooth inertia rotation
       lonRef.current += (targetLonRef.current - lonRef.current) * 0.12;
       latRef.current += (targetLatRef.current - latRef.current) * 0.12;
-      latRef.current = Math.max(-80, Math.min(80, latRef.current));
+      latRef.current = Math.max(-85, Math.min(85, latRef.current));
 
-      const phi = THREE.MathUtils.degToRad(90 - latRef.current);
-      const theta = THREE.MathUtils.degToRad(lonRef.current);
-
-      const targetX = 50 * Math.sin(phi) * Math.cos(theta);
-      const targetY = 50 * Math.cos(phi);
-      const targetZ = 50 * Math.sin(phi) * Math.sin(theta);
-
-      camera.lookAt(targetX, targetY, targetZ);
-      lightTarget.position.set(targetX, targetY, targetZ);
+      // Euler YXZ rotation prevents gimbal lock and matrix NaN singularities completely
+      camera.rotation.order = 'YXZ';
+      camera.rotation.y = THREE.MathUtils.degToRad(-lonRef.current);
+      camera.rotation.x = THREE.MathUtils.degToRad(latRef.current);
+      camera.rotation.z = 0;
 
       // Rotate 3D Hotspot markers
       hotspotMeshesRef.current.forEach(({ mesh }) => {
@@ -384,14 +381,40 @@ export const ThreeSceneRoom: React.FC<ThreeSceneRoomProps> = ({
     }
   };
 
+  // Touch Handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      isDraggingRef.current = true;
+      previousMousePositionRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDraggingRef.current || e.touches.length === 0) return;
+    const deltaX = e.touches[0].clientX - previousMousePositionRef.current.x;
+    const deltaY = e.touches[0].clientY - previousMousePositionRef.current.y;
+
+    targetLonRef.current += deltaX * 0.25;
+    targetLatRef.current += deltaY * 0.25;
+
+    previousMousePositionRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  };
+
+  const handleTouchEnd = () => {
+    isDraggingRef.current = false;
+  };
+
   return (
     <div
       ref={containerRef}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       onClick={handleClick}
-      className="relative w-full h-full cursor-grab active:cursor-grabbing select-none overflow-hidden bg-black"
+      className="relative w-full h-full cursor-grab active:cursor-grabbing select-none overflow-hidden bg-black touch-none"
     >
       {/* 3D Crosshair Reticle */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10 flex items-center justify-center">
