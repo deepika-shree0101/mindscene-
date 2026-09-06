@@ -197,8 +197,6 @@ export const ThreeSceneRoom: React.FC<ThreeSceneRoomProps> = ({
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const sphereMeshRef = useRef<THREE.Mesh | null>(null);
-  const spotLightRef = useRef<THREE.SpotLight | null>(null);
-  const ambientLightRef = useRef<THREE.AmbientLight | null>(null);
   const hotspotMeshesRef = useRef<{ mesh: THREE.Group; hotspot: Hotspot }[]>([]);
   const currentHoveredIdRef = useRef<string | null>(null);
 
@@ -234,7 +232,7 @@ export const ThreeSceneRoom: React.FC<ThreeSceneRoomProps> = ({
     cameraRef.current = camera;
     scene.add(camera);
 
-    // C. WebGL Renderer with High Precision
+    // C. WebGL Renderer
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: false,
@@ -242,43 +240,34 @@ export const ThreeSceneRoom: React.FC<ThreeSceneRoomProps> = ({
     });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0x0a0202, 1.0);
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // D. 360° Panoramic Equirectangular Crime Scene Sphere
-    const sphereGeo = new THREE.SphereGeometry(50, 64, 32);
-    // Invert geometry so it renders on the inside
-    sphereGeo.scale(-1, 1, 1);
-
+    // D. 360° Equirectangular Panoramic Skybox Environment (Native Three.js Background)
     const initialTexture = generate360Panorama(activeScene.visualTheme || 'manor-study', isUvMode);
+    initialTexture.mapping = THREE.EquirectangularReflectionMapping;
+    scene.background = initialTexture;
+
+    // Double-sided spherical backup mesh (guarantees 100% visibility even if shader background glitches)
+    const sphereGeo = new THREE.SphereGeometry(200, 60, 40);
     const sphereMat = new THREE.MeshBasicMaterial({
       map: initialTexture,
-      side: THREE.FrontSide,
+      side: THREE.DoubleSide,
+      depthWrite: false,
     });
     const sphereMesh = new THREE.Mesh(sphereGeo, sphereMat);
     scene.add(sphereMesh);
     sphereMeshRef.current = sphereMesh;
 
-    // E. Dynamic Lighting Rig
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.1);
+    // E. Stable Ambient Light & Point Light
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
     scene.add(ambientLight);
-    ambientLightRef.current = ambientLight;
 
-    // Forensic Flashlight (Mounted directly on camera)
-    const spotLight = new THREE.SpotLight(0xffffff, 4.0);
-    spotLight.position.set(0, 0, 0);
-    spotLight.angle = Math.PI / 4;
-    spotLight.penumbra = 0.4;
-    spotLight.decay = 1.0;
-    spotLight.distance = 60;
-    camera.add(spotLight);
-    spotLightRef.current = spotLight;
-
-    const spotTarget = new THREE.Object3D();
-    spotTarget.position.set(0, 0, -10);
-    camera.add(spotTarget);
-    spotLight.target = spotTarget;
+    const cameraPointLight = new THREE.PointLight(0xffedd5, 1.5, 50);
+    cameraPointLight.position.set(0, 0, 0);
+    camera.add(cameraPointLight);
 
     // F. Floating Atmospheric Dust Particles
     const particleCount = 200;
@@ -308,8 +297,8 @@ export const ThreeSceneRoom: React.FC<ThreeSceneRoomProps> = ({
       animationId = requestAnimationFrame(animate);
 
       // Smooth inertia rotation
-      lonRef.current += (targetLonRef.current - lonRef.current) * 0.15;
-      latRef.current += (targetLatRef.current - latRef.current) * 0.15;
+      lonRef.current += (targetLonRef.current - lonRef.current) * 0.18;
+      latRef.current += (targetLatRef.current - latRef.current) * 0.18;
       latRef.current = Math.max(-85, Math.min(85, latRef.current));
 
       // Euler YXZ rotation completely eliminates Gimbal Lock singularities
@@ -317,10 +306,10 @@ export const ThreeSceneRoom: React.FC<ThreeSceneRoomProps> = ({
       camera.rotation.x = THREE.MathUtils.degToRad(latRef.current);
       camera.rotation.z = 0;
 
-      // Animate 3D Hotspot beacons
+      // Animate 3D Hotspot beacons using Quaternion copying (100% stable, zero gimbal lock)
       const now = Date.now();
       hotspotMeshesRef.current.forEach(({ mesh }) => {
-        mesh.lookAt(camera.position);
+        mesh.quaternion.copy(camera.quaternion);
         const pulse = 1 + Math.sin(now * 0.006) * 0.18;
         mesh.scale.set(pulse, pulse, pulse);
       });
@@ -382,29 +371,52 @@ export const ThreeSceneRoom: React.FC<ThreeSceneRoomProps> = ({
     };
   }, []);
 
-  // 2. Update Texture on Theme / UV mode change
+  // 2. Global Window Pointer Drag Listeners (smooth, impossible to stick or jump)
   useEffect(() => {
-    if (!sphereMeshRef.current) return;
+    const handlePointerMove = (e: PointerEvent) => {
+      if (!isDraggingRef.current) return;
+      const deltaX = e.clientX - previousMousePositionRef.current.x;
+      const deltaY = e.clientY - previousMousePositionRef.current.y;
+
+      targetLonRef.current += deltaX * 0.22;
+      targetLatRef.current += deltaY * 0.22;
+
+      previousMousePositionRef.current = { x: e.clientX, y: e.clientY };
+    };
+
+    const handlePointerUp = () => {
+      isDraggingRef.current = false;
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+    };
+  }, []);
+
+  // 3. Update Texture on Theme / UV mode change
+  useEffect(() => {
+    if (!sceneRef.current) return;
     const newTexture = generate360Panorama(activeScene.visualTheme || 'manor-study', isUvMode);
-    const mat = sphereMeshRef.current.material as THREE.MeshBasicMaterial;
-    if (mat) {
-      if (mat.map) mat.map.dispose();
-      mat.map = newTexture;
-      mat.needsUpdate = true;
-    }
+    newTexture.mapping = THREE.EquirectangularReflectionMapping;
+    sceneRef.current.background = newTexture;
 
-    if (spotLightRef.current) {
-      spotLightRef.current.color.setHex(isUvMode ? 0xa855f7 : 0xffffff);
-      spotLightRef.current.intensity = isUvMode ? 6.0 : isNightVisionOn ? 2.5 : 4.5;
-    }
-
-    if (ambientLightRef.current) {
-      ambientLightRef.current.color.setHex(isUvMode ? 0x6b21a8 : 0xffffff);
-      ambientLightRef.current.intensity = isNightVisionOn ? 1.5 : isUvMode ? 1.2 : 0.95;
+    if (sphereMeshRef.current) {
+      const mat = sphereMeshRef.current.material as THREE.MeshBasicMaterial;
+      if (mat) {
+        if (mat.map) mat.map.dispose();
+        mat.map = newTexture;
+        mat.needsUpdate = true;
+      }
     }
   }, [activeScene, isUvMode, isNightVisionOn]);
 
-  // 3. Build 3D Evidence Hotspots in World Space
+  // 4. Build 3D Evidence Hotspots in World Space
   useEffect(() => {
     if (!sceneRef.current) return;
     const scene = sceneRef.current;
@@ -454,48 +466,9 @@ export const ThreeSceneRoom: React.FC<ThreeSceneRoomProps> = ({
     });
   }, [activeScene, discoveredClueIds, isUvMode]);
 
-  // Mouse Handlers
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handlePointerDown = (e: React.PointerEvent) => {
     isDraggingRef.current = true;
     previousMousePositionRef.current = { x: e.clientX, y: e.clientY };
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDraggingRef.current) return;
-    const deltaX = e.clientX - previousMousePositionRef.current.x;
-    const deltaY = e.clientY - previousMousePositionRef.current.y;
-
-    targetLonRef.current += deltaX * 0.22;
-    targetLatRef.current += deltaY * 0.22;
-
-    previousMousePositionRef.current = { x: e.clientX, y: e.clientY };
-  };
-
-  const handleMouseUp = () => {
-    isDraggingRef.current = false;
-  };
-
-  // Touch Handlers for Mobile
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
-      isDraggingRef.current = true;
-      previousMousePositionRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDraggingRef.current || e.touches.length === 0) return;
-    const deltaX = e.touches[0].clientX - previousMousePositionRef.current.x;
-    const deltaY = e.touches[0].clientY - previousMousePositionRef.current.y;
-
-    targetLonRef.current += deltaX * 0.22;
-    targetLatRef.current += deltaY * 0.22;
-
-    previousMousePositionRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-  };
-
-  const handleTouchEnd = () => {
-    isDraggingRef.current = false;
   };
 
   const handleClick = (e: React.MouseEvent) => {
@@ -525,17 +498,23 @@ export const ThreeSceneRoom: React.FC<ThreeSceneRoomProps> = ({
   return (
     <div
       ref={containerRef}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
+      onPointerDown={handlePointerDown}
       onClick={handleClick}
       className="relative w-full h-full cursor-grab active:cursor-grabbing select-none overflow-hidden bg-black touch-none"
     >
+      {/* Cinematic Forensic Flashlight Beam Vignette */}
+      <div
+        className={`absolute inset-0 pointer-events-none z-10 transition-colors duration-500 ${
+          isUvMode
+            ? 'bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.12)_0%,rgba(59,7,100,0.4)_55%,rgba(15,5,29,0.85)_100%)]'
+            : isNightVisionOn
+            ? 'bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.03)_0%,rgba(0,0,0,0.15)_60%,rgba(0,0,0,0.45)_100%)]'
+            : 'bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.08)_0%,rgba(0,0,0,0.35)_45%,rgba(0,0,0,0.85)_100%)] mix-blend-multiply'
+        }`}
+      />
+
       {/* 3D Crosshair Reticle */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10 flex items-center justify-center">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-20 flex items-center justify-center">
         <div
           className={`w-8 h-8 rounded-full border border-dashed transition-all duration-300 ${
             hoveredHotspot
@@ -554,7 +533,7 @@ export const ThreeSceneRoom: React.FC<ThreeSceneRoomProps> = ({
 
       {/* Target Focus HUD Card */}
       {hoveredHotspot && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 pointer-events-none bg-black/90 border-2 border-red-500/80 p-3.5 rounded-2xl shadow-[0_0_30px_rgba(220,38,38,0.5)] text-center animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-none bg-black/90 border-2 border-red-500/80 p-3.5 rounded-2xl shadow-[0_0_30px_rgba(220,38,38,0.5)] text-center animate-in fade-in zoom-in-95 duration-150">
           <span className="text-[10px] font-mono font-bold text-red-400 uppercase tracking-widest block mb-0.5">
             🎯 3D FORENSIC TARGET ACQUIRED
           </span>
@@ -568,7 +547,7 @@ export const ThreeSceneRoom: React.FC<ThreeSceneRoomProps> = ({
       )}
 
       {/* 3D Drag Navigation Helper Tag */}
-      <div className="absolute top-4 right-4 z-10 pointer-events-none bg-black/80 border border-red-900/70 px-3 py-1.5 rounded-xl text-[10px] font-mono text-red-300 backdrop-blur-sm shadow-md">
+      <div className="absolute top-4 right-4 z-20 pointer-events-none bg-black/80 border border-red-900/70 px-3 py-1.5 rounded-xl text-[10px] font-mono text-red-300 backdrop-blur-sm shadow-md">
         <span>🎮 360° PANORAMIC 3D ROOM // DRAG TO LOOK // CLICK BEACONS</span>
       </div>
     </div>

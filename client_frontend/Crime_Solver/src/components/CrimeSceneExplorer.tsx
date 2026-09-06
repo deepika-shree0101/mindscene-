@@ -10,7 +10,8 @@ import { FullscreenButton } from './FullscreenButton';
 import { ThreeSceneRoom } from './ThreeSceneRoom';
 import { 
   Flashlight, Folder, BrainCircuit, ArrowLeft, 
-  Sparkles, Clock, Eye, EyeOff, ListChecks, MapPin, UserMinus, Zap
+  Sparkles, Clock, Eye, EyeOff, ListChecks, MapPin, UserMinus, Zap,
+  Globe, Scan, Tag, CheckCircle2, Key, Fingerprint, FlaskConical, Search
 } from 'lucide-react';
 
 interface CrimeSceneExplorerProps {
@@ -35,9 +36,56 @@ export const CrimeSceneExplorer: React.FC<CrimeSceneExplorerProps> = ({
   const [scanMessage, setScanMessage] = useState<string | null>(null);
   const [isNightVisionOn, setIsNightVisionOn] = useState<boolean>(false);
   const [isUvMode, setIsUvMode] = useState<boolean>(false);
+  const [viewMode, setViewMode] = useState<'3D' | '2D'>('3D');
+  const [mousePos, setMousePos] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
+  const [isHoveringScene, setIsHoveringScene] = useState<boolean>(false);
   const [discoveryFlash, setDiscoveryFlash] = useState<boolean>(false);
   const lastHeartbeatTime = useRef<number>(0);
   const activeScene: CrimeScene = caseData.scenes[activeSceneIndex] || caseData.scenes[0];
+
+  const handleSceneMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setMousePos({ x, y });
+
+    // Proximity check for heartbeat sound in 2D mode
+    activeScene.hotspots.forEach((hs) => {
+      const dx = hs.xPercent - x;
+      const dy = hs.yPercent - y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 14) {
+        const now = Date.now();
+        if (now - lastHeartbeatTime.current > 750) {
+          sound.playHeartbeatOnce(1.3);
+          lastHeartbeatTime.current = now;
+        }
+      }
+    });
+  };
+
+  const isHotspotUnderBeam = (hx: number, hy: number) => {
+    if (isNightVisionOn) return true;
+    const dx = hx - mousePos.x;
+    const dy = hy - mousePos.y;
+    return Math.sqrt(dx * dx + dy * dy) < 18;
+  };
+
+  const renderHotspotIcon = (iconType: string) => {
+    switch (iconType) {
+      case 'file':
+      case 'document':
+        return <Folder className="w-5 h-5 text-red-300" />;
+      case 'key':
+        return <Key className="w-5 h-5 text-amber-300" />;
+      case 'fingerprint':
+        return <Fingerprint className="w-5 h-5 text-purple-300" />;
+      case 'flask-conical':
+        return <FlaskConical className="w-5 h-5 text-cyan-300" />;
+      default:
+        return <Search className="w-5 h-5 text-red-300" />;
+    }
+  };
 
   // Timer
   useEffect(() => {
@@ -165,6 +213,30 @@ export const CrimeSceneExplorer: React.FC<CrimeSceneExplorerProps> = ({
         <div className="flex items-center gap-2">
           
           <FullscreenButton showLabel={false} />
+
+          {/* View Mode Toggle: 3D 360 Room vs 2D Tactical Scan */}
+          <button
+            onClick={() => {
+              sound.playKeyClick();
+              setViewMode((prev) => (prev === '3D' ? '2D' : '3D'));
+            }}
+            title="Toggle between 3D 360° Spherical Room and 2.5D Tactical Forensic Scan"
+            className="px-3 py-1.5 rounded-lg border font-mono text-xs flex items-center gap-1.5 transition-all cursor-pointer bg-black border-red-800 hover:border-red-400 text-red-300 font-bold shadow-md"
+          >
+            {viewMode === '3D' ? (
+              <>
+                <Globe className="w-3.5 h-3.5 text-cyan-400" />
+                <span className="hidden sm:inline">3D ROOM</span>
+                <span className="sm:hidden">3D</span>
+              </>
+            ) : (
+              <>
+                <Scan className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden sm:inline">2D SCAN</span>
+                <span className="sm:hidden">2D</span>
+              </>
+            )}
+          </button>
 
           {/* UV Blacklight Mode Toggle */}
           <button
@@ -303,28 +375,135 @@ export const CrimeSceneExplorer: React.FC<CrimeSceneExplorerProps> = ({
             </p>
           </div>
 
-          {/* 360-Degree Three.js WebGL Crime Scene Engine */}
-          <ThreeSceneRoom
-            activeScene={activeScene}
-            discoveredClueIds={discoveredClueIds}
-            isNightVisionOn={isNightVisionOn}
-            isUvMode={isUvMode}
-            onHotspotClick={handleHotspotClick}
-            onProximityChange={(dist) => {
-              if (dist < 3.5) {
-                const now = Date.now();
-                if (now - lastHeartbeatTime.current > 700) {
-                  sound.playHeartbeatOnce(1.3);
-                  lastHeartbeatTime.current = now;
+          {viewMode === '3D' ? (
+            /* 360-Degree Three.js WebGL Crime Scene Engine */
+            <ThreeSceneRoom
+              activeScene={activeScene}
+              discoveredClueIds={discoveredClueIds}
+              isNightVisionOn={isNightVisionOn}
+              isUvMode={isUvMode}
+              onHotspotClick={handleHotspotClick}
+              onProximityChange={(dist) => {
+                if (dist < 3.5) {
+                  const now = Date.now();
+                  if (now - lastHeartbeatTime.current > 700) {
+                    sound.playHeartbeatOnce(1.3);
+                    lastHeartbeatTime.current = now;
+                  }
                 }
-              }
-            }}
-          />
+              }}
+            />
+          ) : (
+            /* 2.5D Tactical Forensic Beam Scan View */
+            <div
+              onMouseMove={handleSceneMouseMove}
+              onMouseEnter={() => setIsHoveringScene(true)}
+              onMouseLeave={() => setIsHoveringScene(false)}
+              className="relative w-full h-full bg-[#0d0404] overflow-hidden cursor-crosshair select-none"
+            >
+              {/* Atmospheric Background Palette */}
+              <div
+                className={`absolute inset-0 transition-opacity duration-700 ${
+                  isUvMode ? 'bg-[#18042b]' : 'bg-[#1a0707]'
+                }`}
+                style={{
+                  backgroundImage: `radial-gradient(ellipse at center, ${
+                    isUvMode ? '#3b0764' : '#3f1010'
+                  } 0%, #050101 85%)`,
+                }}
+              >
+                <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_30%_40%,rgba(239,68,68,0.25)_0%,transparent_60%)]" />
+                <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-black/90 to-transparent border-t border-red-900/30" />
+              </div>
+
+              {/* Flashlight Beam Halo Overlay */}
+              {!isNightVisionOn && isHoveringScene && (
+                <div
+                  className="absolute inset-0 pointer-events-none transition-opacity duration-75"
+                  style={{
+                    background: `radial-gradient(circle 160px at ${mousePos.x}% ${mousePos.y}%, rgba(255, 255, 255, 0.15) 0%, rgba(0, 0, 0, 0.45) 60%, rgba(0, 0, 0, 0.94) 100%)`,
+                  }}
+                />
+              )}
+
+              {/* UV Blacklight Glow Mode */}
+              {isUvMode && (
+                <div className="absolute inset-0 pointer-events-none bg-purple-900/25 mix-blend-color-dodge" />
+              )}
+
+              {/* Radar Evidence Hotspots */}
+              {activeScene.hotspots.map((hotspot) => {
+                const isDiscovered = hotspot.linkedClueId && discoveredClueIds.includes(hotspot.linkedClueId);
+                const isUnderBeam = isHotspotUnderBeam(hotspot.xPercent, hotspot.yPercent);
+                const isVisible = isDiscovered || isUnderBeam;
+
+                return (
+                  <div
+                    key={hotspot.id}
+                    onClick={() => handleHotspotClick(hotspot)}
+                    style={{
+                      left: `${hotspot.xPercent}%`,
+                      top: `${hotspot.yPercent}%`,
+                      transform: 'translate(-50%, -50%)',
+                      opacity: isVisible ? 1 : 0.08,
+                    }}
+                    className="absolute z-20 cursor-pointer group/hotspot transition-all duration-300"
+                  >
+                    {isDiscovered ? (
+                      /* Discovered Clue Tag */
+                      <div className="flex flex-col items-center">
+                        <div className="bg-red-600 text-white font-mono text-[10px] font-black px-2 py-0.5 rounded shadow-lg flex items-center gap-1 border border-black animate-in zoom-in-75">
+                          <Tag className="w-3 h-3 text-white" />
+                          <span>LOGGED</span>
+                        </div>
+                        <div className="w-8 h-8 mt-1 rounded-full bg-red-900 text-white flex items-center justify-center font-bold shadow-lg border-2 border-red-500 group-hover/hotspot:scale-115 transition-transform">
+                          <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
+                        </div>
+                      </div>
+                    ) : (
+                      /* Hidden Hotspot Revealed by Beam */
+                      <div className="flex flex-col items-center">
+                        <div
+                          className={`w-11 h-11 rounded-full border-2 flex items-center justify-center shadow-2xl group-hover/hotspot:scale-115 transition-transform duration-200 ${
+                            isUvMode
+                              ? 'bg-purple-950/90 border-purple-400 text-purple-200'
+                              : 'bg-red-950/90 border-red-500 text-red-200'
+                          }`}
+                        >
+                          {renderHotspotIcon(hotspot.iconType)}
+                        </div>
+                        <span className="mt-1 font-mono text-[10px] font-bold text-red-200 bg-black/90 px-2 py-0.5 rounded border border-red-800 shadow-md whitespace-nowrap">
+                          🔎 EXAMINE
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Tooltip Card on Hover */}
+                    <div className="absolute bottom-14 left-1/2 -translate-x-1/2 w-52 bg-black border border-red-500/80 p-3 rounded-xl text-left pointer-events-none opacity-0 group-hover/hotspot:opacity-100 transition-opacity duration-200 shadow-2xl z-30">
+                      <span className="text-[10px] font-mono text-red-400 font-bold uppercase block mb-0.5">
+                        {isDiscovered ? 'EVIDENCE CATALOG' : 'SUSPICIOUS TRACE'}
+                      </span>
+                      <h4 className="text-xs font-sans font-bold text-white leading-tight">
+                        {hotspot.title}
+                      </h4>
+                      <p className="text-[11px] font-sans text-red-300/80 mt-1 leading-snug">
+                        {hotspot.description}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           {/* Bottom Game HUD Overlay */}
           <div className="absolute bottom-4 left-4 z-20 text-[11px] font-mono text-red-400/90 bg-black/85 px-3.5 py-1.5 rounded-xl border border-red-900/60 backdrop-blur-md flex items-center gap-2 pointer-events-none shadow-lg">
             <Flashlight className="w-3.5 h-3.5 text-red-500 animate-pulse" />
-            <span>3D ROOM ACTIVE // 360° DRAG TO LOOK // PROXIMITY HEARTBEATS LIVE</span>
+            <span>
+              {viewMode === '3D'
+                ? '3D 360° ROOM ACTIVE // DRAG TO LOOK // PROXIMITY HEARTBEATS LIVE'
+                : '2D TACTICAL SCAN ACTIVE // MOVE FLASHLIGHT TO REVEAL TRACES'}
+            </span>
           </div>
 
         </div>
