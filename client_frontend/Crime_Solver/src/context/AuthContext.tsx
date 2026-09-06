@@ -52,24 +52,43 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             'Authorization': `Bearer ${savedToken}`
           }
         });
-        if (res.ok) {
+        const contentType = res.headers.get('content-type') || '';
+        if (res.ok && contentType.includes('application/json')) {
           const data = await res.json();
           setUser(data);
         } else {
           // Check local user cache before dropping token
           const localUser = localStorage.getItem('cib_local_user');
           if (localUser) {
-            setUser(JSON.parse(localUser));
-          } else {
-            localStorage.removeItem('cib_token');
-            setToken(null);
+            try {
+              const parsed = JSON.parse(localUser);
+              if (parsed && typeof parsed === 'object') {
+                setUser(parsed);
+                return;
+              }
+            } catch {
+              // Corrupt cache
+            }
           }
+          // Netlify static deployment: auto-clearance for detective
+          const fallbackUser = createFallbackUser('Lead Investigator');
+          setUser(fallbackUser);
         }
       } catch {
         const localUser = localStorage.getItem('cib_local_user');
         if (localUser) {
-          setUser(JSON.parse(localUser));
+          try {
+            const parsed = JSON.parse(localUser);
+            if (parsed && typeof parsed === 'object') {
+              setUser(parsed);
+              return;
+            }
+          } catch {
+            // Corrupt
+          }
         }
+        const fallbackUser = createFallbackUser('Lead Investigator');
+        setUser(fallbackUser);
       } finally {
         setIsLoading(false);
       }
@@ -88,7 +107,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         body: JSON.stringify({ username, password })
       });
 
-      if (res.ok) {
+      const contentType = res.headers.get('content-type') || '';
+      if (res.ok && contentType.includes('application/json')) {
         const data = await res.json();
         localStorage.setItem('cib_token', data.token);
         localStorage.setItem('cib_local_user', JSON.stringify(data));
@@ -98,11 +118,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return true;
       }
 
-      // 404/405/5xx means backend is not deployed on this static host (Netlify deployment)
-      if (res.status === 404 || res.status === 405 || res.status >= 500) {
-        console.warn('Backend API not found on host (Netlify static mode). Authenticating locally.');
+      // 404/405/5xx or HTML response means static host (Netlify)
+      if (res.status === 404 || res.status === 405 || res.status >= 500 || !contentType.includes('application/json')) {
+        console.warn('Backend API offline or Netlify static host: authenticating locally.');
         const localSaved = localStorage.getItem('cib_local_user');
-        const userObj: UserProfile = localSaved ? JSON.parse(localSaved) : createFallbackUser(username);
+        let userObj: UserProfile;
+        try {
+          userObj = localSaved ? JSON.parse(localSaved) : createFallbackUser(username);
+        } catch {
+          userObj = createFallbackUser(username);
+        }
         localStorage.setItem('cib_token', userObj.token || 'offline-token');
         setToken(userObj.token || 'offline-token');
         setUser(userObj);
@@ -118,7 +143,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch {
       // Offline / Network failure: seamless local agent clearance
       const localSaved = localStorage.getItem('cib_local_user');
-      const userObj: UserProfile = localSaved ? JSON.parse(localSaved) : createFallbackUser(username);
+      let userObj: UserProfile;
+      try {
+        userObj = localSaved ? JSON.parse(localSaved) : createFallbackUser(username);
+      } catch {
+        userObj = createFallbackUser(username);
+      }
       localStorage.setItem('cib_token', userObj.token || 'offline-token');
       setToken(userObj.token || 'offline-token');
       setUser(userObj);
@@ -137,7 +167,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         body: JSON.stringify({ username, password, rank, clearanceLevel: clearance })
       });
 
-      if (res.ok) {
+      const contentType = res.headers.get('content-type') || '';
+      if (res.ok && contentType.includes('application/json')) {
         const data = await res.json();
         localStorage.setItem('cib_token', data.token);
         localStorage.setItem('cib_local_user', JSON.stringify(data));
@@ -147,9 +178,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return true;
       }
 
-      // 404/405/5xx means backend is not deployed on this static host (Netlify deployment)
-      if (res.status === 404 || res.status === 405 || res.status >= 500) {
-        console.warn('Backend API not found on host (Netlify static mode). Enrolling operative locally.');
+      // 404/405/5xx or HTML response means static host (Netlify)
+      if (res.status === 404 || res.status === 405 || res.status >= 500 || !contentType.includes('application/json')) {
+        console.warn('Backend API offline or Netlify static host: enrolling operative locally.');
         const fallbackUser = createFallbackUser(username, rank, clearance);
         setToken(fallbackUser.token!);
         setUser(fallbackUser);
@@ -182,21 +213,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = () => {
     localStorage.removeItem('cib_token');
+    localStorage.removeItem('cib_local_user');
     setToken(null);
     setUser(null);
   };
 
   const updateUserScore = (scoreToAdd: number, caseId?: string) => {
     if (!user) return;
-    const updatedCases = caseId && !user.completedCaseIds.includes(caseId)
-      ? [...user.completedCaseIds, caseId]
-      : user.completedCaseIds;
+    const currentCompleted = Array.isArray(user.completedCaseIds) ? user.completedCaseIds : [];
+    const updatedCases = caseId && !currentCompleted.includes(caseId)
+      ? [...currentCompleted, caseId]
+      : currentCompleted;
 
-    setUser({
+    const updatedUser: UserProfile = {
       ...user,
-      score: user.score + scoreToAdd,
+      score: (user.score || 0) + scoreToAdd,
       completedCaseIds: updatedCases
-    });
+    };
+    setUser(updatedUser);
+    try {
+      localStorage.setItem('cib_local_user', JSON.stringify(updatedUser));
+    } catch {
+      // Storage blocked
+    }
   };
 
   return (

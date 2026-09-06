@@ -28,7 +28,8 @@ const InvestigationApp: React.FC = () => {
         if (savedToken) headers['Authorization'] = `Bearer ${savedToken}`;
 
         const res = await fetch('/api/cases', { headers });
-        if (res.ok) {
+        const contentType = res.headers.get('content-type') || '';
+        if (res.ok && contentType.includes('application/json')) {
           const data = await res.json();
           if (Array.isArray(data) && data.length > 0) {
             setCases(data);
