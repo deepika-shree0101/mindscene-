@@ -9,6 +9,7 @@ interface EvidenceInventoryProps {
   discoveredClues: Clue[];
   allSuspects: Suspect[];
   onInspectClue: (clue: Clue) => void;
+  onProceedToInterrogation?: () => void;
 }
 
 export const EvidenceInventory: React.FC<EvidenceInventoryProps> = ({
@@ -17,6 +18,7 @@ export const EvidenceInventory: React.FC<EvidenceInventoryProps> = ({
   discoveredClues,
   allSuspects,
   onInspectClue,
+  onProceedToInterrogation,
 }) => {
   const [activeTab, setActiveTab] = useState<'CLUES' | 'SUSPECTS'>('CLUES');
 
@@ -172,6 +174,22 @@ export const EvidenceInventory: React.FC<EvidenceInventoryProps> = ({
           ))
         )}
       </div>
+
+      {/* Dynamic Stage Gate to Suspect Interrogation */}
+      {onProceedToInterrogation && (
+        <div className="p-4 bg-[#090d14] border-t border-slate-800 shrink-0">
+          <button
+            type="button"
+            onClick={() => {
+              sound.playAccessGranted();
+              onProceedToInterrogation();
+            }}
+            className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white font-creepster font-bold text-sm tracking-wider flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(220,38,38,0.4)] transition-all cursor-pointer transform hover:scale-[1.02]"
+          >
+            <span>PROCEED TO SUSPECT INTERROGATION ➔</span>
+          </button>
+        </div>
+      )}
 
     </div>
   );

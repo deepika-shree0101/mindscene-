@@ -11,7 +11,7 @@ import { ThreeSceneRoom } from './ThreeSceneRoom';
 import { 
   Flashlight, Folder, BrainCircuit, ArrowLeft, 
   Sparkles, Clock, Eye, EyeOff, ListChecks, MapPin, UserMinus, Zap,
-  Globe, Scan, Tag, CheckCircle2, Key, Fingerprint, FlaskConical, Search
+  Globe, Scan, Tag, CheckCircle2, Key, Fingerprint, FlaskConical, Search, Lock
 } from 'lucide-react';
 
 interface CrimeSceneExplorerProps {
@@ -152,6 +152,21 @@ export const CrimeSceneExplorer: React.FC<CrimeSceneExplorerProps> = ({
 
   const discoveredClues = caseData.clues.filter((c) => discoveredClueIds.includes(c.id));
 
+  // Sequential room gate: room idx is unlocked only if all previous rooms have their clues discovered
+  const isRoomUnlocked = (idx: number) => {
+    if (idx === 0) return true;
+    for (let i = 0; i < idx; i++) {
+      const sceneClueIds = caseData.scenes[i].hotspots
+        .map((h) => h.linkedClueId)
+        .filter((id): id is string => Boolean(id));
+      const cleared =
+        sceneClueIds.length > 0 &&
+        sceneClueIds.every((id) => discoveredClueIds.includes(id));
+      if (!cleared) return false;
+    }
+    return true;
+  };
+
   const formatTimer = (secs: number) => {
     const m = Math.floor(secs / 60);
     const s = secs % 60;
@@ -201,43 +216,61 @@ export const CrimeSceneExplorer: React.FC<CrimeSceneExplorerProps> = ({
           </div>
         </div>
 
-        {/* Center: Room Switcher */}
-        <div className="flex items-center gap-1 bg-black/80 p-1 rounded-xl border border-red-900/60">
+        {/* Center: Sequential Room Switcher */}
+        <div className="flex items-center gap-1 bg-black/80 p-1 rounded-xl border border-red-900/60 overflow-x-auto">
           {caseData.scenes.map((scene, idx) => {
             const isCurrent = activeSceneIndex === idx;
             const sceneClueIds = scene.hotspots.map((h) => h.linkedClueId).filter(Boolean);
             const isSceneCleared =
               sceneClueIds.length > 0 &&
               sceneClueIds.every((id) => discoveredClueIds.includes(id!));
+            const isUnlocked = isRoomUnlocked(idx);
 
             return (
               <button
                 key={scene.id}
                 onClick={() => {
-                  sound.playKeyClick();
-                  setActiveSceneIndex(idx);
+                  if (isUnlocked) {
+                    sound.playKeyClick();
+                    setActiveSceneIndex(idx);
+                  } else {
+                    sound.playAccessDenied();
+                    setScanMessage(`🔒 ACCESS RESTRICTED // CLEAR ROOM "${caseData.scenes[idx - 1]?.name.toUpperCase()}" FIRST`);
+                    setTimeout(() => setScanMessage(null), 3500);
+                  }
                 }}
-                className={`px-3 py-1.5 rounded-lg font-sans text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                title={!isUnlocked ? 'Locked: Clear earlier room first' : scene.name}
+                className={`px-3 py-1.5 rounded-lg font-sans text-xs font-bold transition-all flex items-center gap-1.5 ${
                   isCurrent
                     ? 'bg-red-800 text-white shadow-md shadow-red-950'
                     : isSceneCleared
-                    ? 'text-emerald-400 bg-emerald-950/40 hover:bg-emerald-950/70 border border-emerald-700/50'
-                    : 'text-red-400/70 hover:text-red-200 hover:bg-red-950/40'
+                    ? 'text-emerald-400 bg-emerald-950/40 hover:bg-emerald-950/70 border border-emerald-700/50 cursor-pointer'
+                    : isUnlocked
+                    ? 'text-red-300 hover:text-white hover:bg-red-950/40 cursor-pointer'
+                    : 'text-slate-600 bg-black/40 border border-slate-900 cursor-not-allowed opacity-60'
                 }`}
               >
-                <MapPin className="w-3 h-3" />
+                {isUnlocked ? (
+                  <MapPin className="w-3 h-3" />
+                ) : (
+                  <Lock className="w-3 h-3 text-red-500/70" />
+                )}
                 <span>{scene.name}</span>
-                {isSceneCleared && (
+                {isSceneCleared ? (
                   <span className="text-[10px] bg-emerald-600 text-black font-black px-1 rounded-full">
                     ✓
                   </span>
-                )}
+                ) : !isUnlocked ? (
+                  <span className="text-[9px] font-mono text-red-500 bg-red-950/80 px-1 py-0.2 rounded border border-red-900/60">
+                    LOCKED
+                  </span>
+                ) : null}
               </button>
             );
           })}
         </div>
 
-        {/* Right: Controls & Actions */}
+        {/* Right: Sequential Phase Pipeline Ribbon & Tools */}
         <div className="flex items-center gap-2">
           
           <FullscreenButton showLabel={false} />
@@ -249,19 +282,17 @@ export const CrimeSceneExplorer: React.FC<CrimeSceneExplorerProps> = ({
               setViewMode((prev) => (prev === '3D' ? '2D' : '3D'));
             }}
             title="Toggle between 3D 360° Spherical Room and 2.5D Tactical Forensic Scan"
-            className="px-3 py-1.5 rounded-lg border font-mono text-xs flex items-center gap-1.5 transition-all cursor-pointer bg-black border-red-800 hover:border-red-400 text-red-300 font-bold shadow-md"
+            className="px-2.5 py-1.5 rounded-lg border font-mono text-xs flex items-center gap-1 transition-all cursor-pointer bg-black border-red-800 hover:border-red-400 text-red-300 font-bold shadow-md"
           >
             {viewMode === '3D' ? (
               <>
                 <Globe className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="hidden sm:inline">3D ROOM</span>
-                <span className="sm:hidden">3D</span>
+                <span className="hidden xl:inline">3D ROOM</span>
               </>
             ) : (
               <>
                 <Scan className="w-3.5 h-3.5 text-amber-400" />
-                <span className="hidden sm:inline">2D SCAN</span>
-                <span className="sm:hidden">2D</span>
+                <span className="hidden xl:inline">2D SCAN</span>
               </>
             )}
           </button>
@@ -273,14 +304,13 @@ export const CrimeSceneExplorer: React.FC<CrimeSceneExplorerProps> = ({
               setIsUvMode(!isUvMode);
             }}
             title={isUvMode ? "Switch to Normal Spotlight" : "Switch to UV Forensic Blacklight"}
-            className={`px-3 py-1.5 rounded-lg border font-mono text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`p-2 rounded-lg border font-mono text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
               isUvMode
                 ? 'bg-purple-950/90 border-purple-500 text-purple-200 shadow-[0_0_15px_rgba(168,85,247,0.4)]'
                 : 'bg-black border-red-900/60 text-red-400/80 hover:border-red-500'
             }`}
           >
             <Zap className="w-3.5 h-3.5 text-purple-400" />
-            <span className="hidden md:inline">{isUvMode ? 'UV BLACKLIGHT ON' : 'UV MODE'}</span>
           </button>
 
           {/* Ambient Lighting Toggle */}
@@ -290,49 +320,85 @@ export const CrimeSceneExplorer: React.FC<CrimeSceneExplorerProps> = ({
               setIsNightVisionOn(!isNightVisionOn);
             }}
             title={isNightVisionOn ? 'Turn on Forensic Spotlight' : 'Turn on Room Ambient Light'}
-            className={`px-3 py-1.5 rounded-lg border font-mono text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${
+            className={`p-2 rounded-lg border font-mono text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${
               isNightVisionOn
                 ? 'bg-red-950/90 border-red-500 text-red-200 font-bold'
                 : 'bg-black border-red-900/60 text-red-400/80 hover:border-red-500'
             }`}
           >
-            {isNightVisionOn ? <Eye className="w-4 h-4 text-red-400" /> : <EyeOff className="w-4 h-4 text-red-400" />}
-            <span className="hidden md:inline">{isNightVisionOn ? 'LIGHTS ON' : 'SPOTLIGHT'}</span>
+            {isNightVisionOn ? <Eye className="w-3.5 h-3.5 text-red-400" /> : <EyeOff className="w-3.5 h-3.5 text-red-400" />}
           </button>
 
-          {/* Interrogate Suspect Button */}
+          <div className="w-px h-5 bg-red-900/60 hidden sm:block" />
+
+          {/* Sequential Step 2: Evidence Vault */}
           <button
             onClick={() => {
-              sound.playKeyClick();
-              setIsInterrogationOpen(true);
+              if (discoveredClues.length > 0) {
+                sound.playKeyClick();
+                setIsInventoryOpen(true);
+              } else {
+                sound.playAccessDenied();
+                setScanMessage("FIND EVIDENCE IN THE ROOM FIRST");
+                setTimeout(() => setScanMessage(null), 3000);
+              }
             }}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-red-900/90 border border-red-500/80 hover:bg-red-800 text-white font-mono text-xs font-bold transition-all cursor-pointer shadow-[0_0_20px_rgba(220,38,38,0.4)] animate-pulse"
+            title={discoveredClues.length === 0 ? "Find evidence in the room first" : "Inspect collected clues in 3D"}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-mono font-bold transition-all ${
+              discoveredClues.length === 0
+                ? 'bg-black/40 border-slate-800 text-slate-500 cursor-not-allowed opacity-60'
+                : allCaseCluesCollected
+                ? 'bg-amber-950/80 border-amber-500 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.4)] animate-pulse cursor-pointer'
+                : 'bg-black border-red-900/60 hover:border-red-500 text-red-300 cursor-pointer'
+            }`}
           >
-            <UserMinus className="w-4 h-4 text-red-300" />
-            <span className="hidden lg:inline">INTERROGATE ({caseData.suspects.length})</span>
+            <Folder className="w-3.5 h-3.5 text-amber-400" />
+            <span>VAULT ({discoveredClues.length}/{caseData.clues.length})</span>
           </button>
 
-          {/* Evidence Dossier Button */}
+          {/* Sequential Step 3: Interrogate Suspects */}
           <button
             onClick={() => {
-              sound.playKeyClick();
-              setIsInventoryOpen(true);
+              if (discoveredClues.length > 0) {
+                sound.playKeyClick();
+                setIsInterrogationOpen(true);
+              } else {
+                sound.playAccessDenied();
+                setScanMessage("COLLECT PHYSICAL EVIDENCE BEFORE INTERROGATION");
+                setTimeout(() => setScanMessage(null), 3000);
+              }
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black border border-red-900/60 hover:border-red-500 text-red-300 font-mono text-xs font-bold transition-colors cursor-pointer"
+            title={discoveredClues.length === 0 ? "Collect evidence before interrogating" : "Interrogate suspects with evidence"}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-mono font-bold transition-all ${
+              discoveredClues.length === 0
+                ? 'bg-black/40 border-slate-800 text-slate-500 cursor-not-allowed opacity-60'
+                : 'bg-red-950/80 border-red-800 hover:border-red-500 text-red-300 hover:text-white cursor-pointer shadow-md'
+            }`}
           >
-            <Folder className="w-4 h-4 text-red-400" />
-            <span>EVIDENCE ({discoveredClues.length}/{caseData.clues.length})</span>
+            <UserMinus className="w-3.5 h-3.5 text-red-400" />
+            <span className="hidden sm:inline">INTERROGATE ({caseData.suspects.length})</span>
           </button>
 
-          {/* Final Deduction Button */}
+          {/* Sequential Step 4: Solve Case */}
           <button
             onClick={() => {
-              sound.playKeyClick();
-              setIsDeductionOpen(true);
+              if (allCaseCluesCollected) {
+                sound.playKeyClick();
+                setIsDeductionOpen(true);
+              } else {
+                sound.playAccessDenied();
+                setScanMessage(`REMAINING: ${caseData.clues.length - discoveredClues.length} CLUES NEEDED TO ACCUSE`);
+                setTimeout(() => setScanMessage(null), 3500);
+              }
             }}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white font-creepster font-bold text-xs tracking-wider shadow-lg hover:shadow-red-500/30 transition-all cursor-pointer"
+            title={!allCaseCluesCollected ? "Gather all clues in all rooms to reconstruct crime" : "Submit Final Accusation Matrix"}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg font-creepster font-bold text-xs tracking-wider transition-all ${
+              allCaseCluesCollected
+                ? 'bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white shadow-[0_0_25px_rgba(220,38,38,0.5)] animate-pulse cursor-pointer'
+                : 'bg-black/60 border border-red-950 text-red-900 cursor-not-allowed opacity-50'
+            }`}
           >
-            <BrainCircuit className="w-4 h-4" />
+            <BrainCircuit className="w-3.5 h-3.5" />
             <span>SOLVE CASE 🔎</span>
           </button>
 
@@ -403,33 +469,60 @@ export const CrimeSceneExplorer: React.FC<CrimeSceneExplorerProps> = ({
             </p>
           </div>
 
-          {/* Room Clearance Notification Banner */}
+          {/* Room Clearance Notification Banner & Dynamic Stage Transition Gate */}
           {isCurrentRoomCleared && (
-            <div className="absolute top-4 right-4 z-20 animate-in fade-in slide-in-from-top duration-300">
-              <div className="flex items-center gap-2.5 bg-emerald-950/95 border-2 border-emerald-500 text-emerald-200 px-4 py-2.5 rounded-2xl shadow-[0_0_30px_rgba(16,185,129,0.5)] font-mono text-xs font-bold backdrop-blur-md">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 animate-pulse shrink-0" />
-                <div>
-                  <div className="text-emerald-300 font-black tracking-wider">
+            <div className="absolute top-4 right-4 z-20 animate-in fade-in slide-in-from-top duration-300 max-w-sm">
+              <div className="flex flex-col gap-2 bg-emerald-950/95 border-2 border-emerald-500 text-emerald-200 p-3.5 rounded-2xl shadow-[0_0_30px_rgba(16,185,129,0.5)] font-mono text-xs font-bold backdrop-blur-md">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 animate-pulse shrink-0" />
+                  <span className="text-emerald-300 font-black tracking-wider">
                     {allCaseCluesCollected
-                      ? 'ALL EVIDENCE IN CRIME SCENE FOUND!'
-                      : 'ROOM INVESTIGATION COMPLETE!'}
-                  </div>
-                  <div className="text-[11px] text-emerald-100 font-sans font-medium">
-                    {allCaseCluesCollected
-                      ? 'Open Evidence Vault to inspect 3D clues or proceed to Interrogation & Case Solve.'
-                      : 'All evidence in this room secured. Switch room at the top to continue.'}
-                  </div>
+                      ? 'ALL CRIME SCENE ROOMS SECURED!'
+                      : `ROOM "${activeScene.name.toUpperCase()}" CLEARED!`}
+                  </span>
                 </div>
+                
+                <p className="text-[11px] text-emerald-100 font-sans font-medium leading-relaxed">
+                  {allCaseCluesCollected
+                    ? 'All physical evidence has been secured. Enter the Evidence Vault to inspect 3D clues or interrogate suspects.'
+                    : `All clues in this room have been logged. Proceed to the next area.`}
+                </p>
+
+                {/* Dynamic Next Gate Button */}
+                {activeSceneIndex < caseData.scenes.length - 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sound.playAccessGranted();
+                      setActiveSceneIndex(activeSceneIndex + 1);
+                    }}
+                    className="w-full mt-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-slate-950 font-mono text-xs font-black tracking-wider flex items-center justify-center gap-1.5 shadow-lg transition-all transform hover:scale-[1.02] cursor-pointer"
+                  >
+                    <span>ENTER NEXT ROOM: {caseData.scenes[activeSceneIndex + 1].name.toUpperCase()} ➔</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sound.playAccessGranted();
+                      setIsInventoryOpen(true);
+                    }}
+                    className="w-full mt-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-creepster font-bold text-xs tracking-wider flex items-center justify-center gap-1.5 shadow-[0_0_20px_rgba(245,158,11,0.5)] transition-all transform hover:scale-[1.02] cursor-pointer"
+                  >
+                    <Folder className="w-3.5 h-3.5 text-slate-950" />
+                    <span>INSPECT 3D EVIDENCE VAULT ➔</span>
+                  </button>
+                )}
               </div>
             </div>
           )}
 
           {viewMode === '3D' ? (
-            /* 360-Degree Three.js WebGL Crime Scene Engine (Unmounted when Clue 3D modal is open to ensure single WebGL context) */
-            inspectingClue ? (
+            /* 360-Degree Three.js WebGL Crime Scene Engine (Unmounted when Clue 3D modal or Interrogation is open to ensure single WebGL context) */
+            (inspectingClue || isInterrogationOpen) ? (
               <div className="w-full h-full bg-black flex flex-col items-center justify-center text-red-400 font-mono text-xs gap-2">
                 <div className="w-8 h-8 rounded-full border-2 border-red-500 border-t-transparent animate-spin" />
-                <span>3D CRIME SCENE PAUSED // EVIDENCE VAULT 3D INSPECTOR ACTIVE</span>
+                <span>3D CRIME SCENE PAUSED // FORENSIC MODAL ACTIVE</span>
               </div>
             ) : (
               <ThreeSceneRoom
@@ -580,6 +673,10 @@ export const CrimeSceneExplorer: React.FC<CrimeSceneExplorerProps> = ({
         discoveredClues={discoveredClues}
         allSuspects={caseData.suspects}
         onInspectClue={(clue) => setInspectingClue(clue)}
+        onProceedToInterrogation={() => {
+          setIsInventoryOpen(false);
+          setIsInterrogationOpen(true);
+        }}
       />
 
       {/* Clue Inspection Modal */}
@@ -596,6 +693,10 @@ export const CrimeSceneExplorer: React.FC<CrimeSceneExplorerProps> = ({
           caseData={caseData}
           discoveredClueIds={discoveredClueIds}
           onClose={() => setIsInterrogationOpen(false)}
+          onProceedToDeduction={() => {
+            setIsInterrogationOpen(false);
+            setIsDeductionOpen(true);
+          }}
         />
       )}
 

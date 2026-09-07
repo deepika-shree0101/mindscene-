@@ -14,6 +14,7 @@ interface AiInterrogationRoomProps {
   caseData: CaseData;
   discoveredClueIds: string[];
   onClose: () => void;
+  onProceedToDeduction?: () => void;
 }
 
 interface ChatMessage {
@@ -29,6 +30,7 @@ export const AiInterrogationRoom: React.FC<AiInterrogationRoomProps> = ({
   caseData,
   discoveredClueIds,
   onClose,
+  onProceedToDeduction,
 }) => {
   const { user } = useAuth();
   const [selectedSuspectIndex, setSelectedSuspectIndex] = useState<number>(0);
@@ -363,6 +365,21 @@ export const AiInterrogationRoom: React.FC<AiInterrogationRoomProps> = ({
             >
               {isVoiceEnabled ? <Volume2 className="w-4 h-4 text-red-400" /> : <VolumeX className="w-4 h-4" />}
             </button>
+
+            {/* Dynamic Stage Gate to Case Deduction */}
+            {onProceedToDeduction && (
+              <button
+                type="button"
+                onClick={() => {
+                  sound.playAccessGranted();
+                  if (window.speechSynthesis) window.speechSynthesis.cancel();
+                  onProceedToDeduction();
+                }}
+                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white font-creepster font-bold text-xs tracking-wider flex items-center gap-1.5 shadow-[0_0_15px_rgba(220,38,38,0.5)] transition-all cursor-pointer transform hover:scale-105"
+              >
+                <span>CONFRONT CULPRIT / SOLVE ➔</span>
+              </button>
+            )}
 
             {/* Close Button */}
             <button
