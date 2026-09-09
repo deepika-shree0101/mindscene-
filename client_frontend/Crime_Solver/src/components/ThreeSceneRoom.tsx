@@ -415,6 +415,7 @@ export const ThreeSceneRoom: React.FC<ThreeSceneRoomProps> = ({
   onProximityChange,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const canvasMountRef = useRef<HTMLDivElement>(null);
   const [hoveredHotspot, setHoveredHotspot] = useState<Hotspot | null>(null);
 
   // Three.js instances
@@ -441,10 +442,10 @@ export const ThreeSceneRoom: React.FC<ThreeSceneRoomProps> = ({
 
   // 1. Initial Scene Setup (Runs once)
   useEffect(() => {
-    if (!containerRef.current) return;
-    const container = containerRef.current;
-    const width = container.clientWidth || 800;
-    const height = container.clientHeight || 500;
+    if (!canvasMountRef.current) return;
+    const mount = canvasMountRef.current;
+    const width = mount.clientWidth || 800;
+    const height = mount.clientHeight || 500;
 
     // A. Scene Setup
     const scene = new THREE.Scene();
@@ -466,8 +467,8 @@ export const ThreeSceneRoom: React.FC<ThreeSceneRoomProps> = ({
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setClearColor(0x0a0202, 1.0);
-    container.innerHTML = '';
-    container.appendChild(renderer.domElement);
+    mount.innerHTML = '';
+    mount.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     // D. 360° Equirectangular Panoramic Skybox Environment (Native Three.js Background)
@@ -577,9 +578,9 @@ export const ThreeSceneRoom: React.FC<ThreeSceneRoomProps> = ({
 
     // H. Responsive Resize Handler
     const handleResize = () => {
-      if (!containerRef.current || !renderer || !camera) return;
-      const w = containerRef.current.clientWidth;
-      const h = containerRef.current.clientHeight;
+      if (!canvasMountRef.current || !renderer || !camera) return;
+      const w = canvasMountRef.current.clientWidth;
+      const h = canvasMountRef.current.clientHeight;
       if (w === 0 || h === 0) return;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
@@ -592,6 +593,9 @@ export const ThreeSceneRoom: React.FC<ThreeSceneRoomProps> = ({
       cancelAnimationFrame(animationId);
       window.removeEventListener('resize', handleResize);
       renderer.dispose();
+      if (renderer.domElement && renderer.domElement.parentNode) {
+        renderer.domElement.parentNode.removeChild(renderer.domElement);
+      }
       scene.clear();
     };
   }, []);
@@ -727,6 +731,9 @@ export const ThreeSceneRoom: React.FC<ThreeSceneRoomProps> = ({
       onClick={handleClick}
       className="relative w-full h-full cursor-grab active:cursor-grabbing select-none overflow-hidden bg-black touch-none"
     >
+      {/* Dedicated Three.js WebGL Canvas Container - React virtual DOM will NEVER touch this element */}
+      <div ref={canvasMountRef} className="absolute inset-0 w-full h-full z-0 pointer-events-none" />
+
       {/* Cinematic Forensic Flashlight Beam Vignette */}
       <div
         className={`absolute inset-0 pointer-events-none z-10 transition-colors duration-500 ${
